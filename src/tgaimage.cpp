@@ -205,6 +205,10 @@ bool TGAImage::write_tga_file(const char *filename, bool rle) {
 	return true;
 }
 
+bool TGAImage::write_tga_file(std::string filename, bool rle) {
+	return TGAImage::write_tga_file(filename.c_str(), rle);
+}
+
 // TODO: it is not necessary to break a raw chunk for two equal pixels (for the matter of the resulting size)
 bool TGAImage::unload_rle_data(std::ofstream &out) {
 	const unsigned char max_chunk_length = 128;

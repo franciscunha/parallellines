@@ -1,3 +1,4 @@
+#include "paths.hpp"
 #include "tgaimage.hpp"
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
@@ -7,6 +8,6 @@ int main(int argc, char** argv) {
 	TGAImage image(100, 100, TGAImage::RGB);
 	image.set(52, 41, red);
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
+	image.write_tga_file(paths::output("img.tga"));
 	return 0;
 }
