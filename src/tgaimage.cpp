@@ -1,3 +1,6 @@
+// This file is written by Dmitry V. Sokolov (https://github.com/ssloy) and provided
+// as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
