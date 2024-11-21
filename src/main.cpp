@@ -13,8 +13,8 @@ const TGAColor red    = TGAColor(255, 0,   0,   255);
 const TGAColor green  = TGAColor(0,   255, 0,   255);
 const TGAColor blue   = TGAColor(0,   0,   255, 255);
 
-const int width = 512;
-const int height = 512;
+const int width = 400;
+const int height = 400;
 
 float lerp(float v0, float v1, float t) {
   return (1 - t) * v0 + t * v1;
@@ -74,44 +74,6 @@ void wireframe(Model &model, TGAImage &image, TGAColor color) {
 	
 }
 
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) { 	
-	// find the triangle's bounding box (bb)
-	Vec2i bounds[2] = {
-		Vec2i(std::min({t0.x, t1.x, t2.x}), std::min({t0.y, t1.y, t2.y})),
-		Vec2i(std::max({t0.x, t1.x, t2.x}), std::max({t0.y, t1.y, t2.y}))
-	};
-	
-	// iterate over pixels contained in bb, to check if each is in triangle
-
-	// pre compute some stuff that is pixel independent and needed for barycentric coord
-	Vec2i ab = t1 - t0;
-	Vec2i ac = t2 - t0;
-
-	for (int x = bounds[0].x; x <= bounds[1].x; x++) {
-		for (int y = bounds[0].y; y <= bounds[1].y; y++) {
-			
-			// check if pixel is inside triangle using barycentic coords
-
-			Vec2i pa = t0 - Vec2i(x, y);
-			Vec3f cross = Vec3f(ac.x, ab.x, pa.x) ^ Vec3f(ac.y, ab.y, pa.y);
-			// deal with division by zero (degenerate triangle)
-			if (std::abs(cross.z) < 0.1) {
-				continue;
-			}
-			cross = cross * (1/cross.z);
-			Vec3f barycentric = Vec3f(1 - cross.x - cross.y, cross.y, cross.x);
-			
-			if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) {
-				// pixel is not inside triangle
-				continue;
-			}
-
-			image.set(x, y, color);
-		}	
-	}
-
-}
-
 Vec2i world_to_screen_coords(Vec3f world_coords) {
 	return Vec2i(
 		(world_coords.x + 1) * (float)width  / (float)2,
@@ -119,20 +81,102 @@ Vec2i world_to_screen_coords(Vec3f world_coords) {
 	); 
 }
 
+/**
+ * Given a triangle with vertices A, B, C and a point P, returns the barycentric coordinates of P in relation to the triangle.
+ * If triangle is degenerate, returns a negative coordinate in X.
+ * 
+ * @param ab vector from A to B
+ * @param ac vector from A to C
+ * @param pa vector from P to A
+ */
+Vec3f barycentric_coords(Vec2i ab, Vec2i ac, Vec2i pa) {
+	Vec3f cross = Vec3f(ac.x, ab.x, pa.x) ^ Vec3f(ac.y, ab.y, pa.y);
+	// deal with division by zero (degenerate triangle)
+	if (std::abs(cross.z) < 0.1) {
+		return Vec3f(-1, 1, 1);
+	}
+	cross = cross * (1/cross.z);
+	return Vec3f(1 - cross.x - cross.y, cross.y, cross.x);
+}
+
+void triangle(Vec3f vertices[3], TGAImage &image, TGAColor color, float z_buffer[width][height]) { 	
+	Vec2i screen_coords[3] = {
+		world_to_screen_coords(vertices[0]),
+		world_to_screen_coords(vertices[1]),
+		world_to_screen_coords(vertices[2]),
+	};
+
+	// find the triangle's bounding box (bb)
+	Vec2i bounds[2] = {
+		Vec2i(
+			std::min({screen_coords[0].x, screen_coords[1].x, screen_coords[2].x}), 
+			std::min({screen_coords[0].y, screen_coords[1].y, screen_coords[2].y})
+		),
+		Vec2i(
+			std::max({screen_coords[0].x, screen_coords[1].x, screen_coords[2].x}), 
+			std::max({screen_coords[0].y, screen_coords[1].y, screen_coords[2].y})
+		)
+	};
+
+	
+	// pre compute some stuff that is pixel independent and needed later for barycentric coord
+	Vec2i vecAB = screen_coords[1] - screen_coords[0];
+	Vec2i vecAC = screen_coords[2] - screen_coords[0];
+
+	// iterate over pixels contained in bb, to check if each is in triangle
+	for (int x = bounds[0].x; x <= bounds[1].x; x++) {
+		for (int y = bounds[0].y; y <= bounds[1].y; y++) {
+			
+			// check if pixel is inside triangle using barycentic coords
+
+			Vec2i vecPA = screen_coords[0] - Vec2i(x, y);
+			Vec3f barycentric = barycentric_coords(vecAB, vecAC, vecPA);
+			
+			if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) {
+				// pixel is not inside triangle, also ignores degenerate triangles
+				continue;
+			}
+
+			float pixel_z = barycentric.x * vertices[0].z + barycentric.y * vertices[1].z + barycentric.z * vertices[2].z;
+
+			if (z_buffer[x][y] > pixel_z) {
+				// there is already something drawn in front of this pixel
+				continue;
+			}
+
+			z_buffer[x][y] = pixel_z;
+			image.set(x, y, color);
+		}	
+	}
+
+	// quick fix for missing pixels TODO: investigate this
+	line(screen_coords[0], screen_coords[1], image, color);
+	line(screen_coords[0], screen_coords[2], image, color);
+	line(screen_coords[2], screen_coords[1], image, color);
+
+}
+
 TGAColor mult_color(const TGAColor &c, float x) {
 	return TGAColor(c.r * x, c.g * x, c.b * x, c.a);
 }
 
 void render(Model &model, TGAImage &image, Vec3f light_dir) {
+	
+	// initialize z-buffer to negative infinity
+	float z_buffer[width][height];
+	for (int x = 0; x < width; x++) {
+		for (int y = 0; y < height; y++) {
+			z_buffer[x][y] = -std::numeric_limits<float>::max();
+		}
+	}
+
 	for (int i = 0; i < model.nfaces(); i++) { 
 		std::vector<int> face = model.face(i);
 		
-		// get face vertices in both coordinate systems
+		// get face vertices
 		Vec3f world_coords[3];
-		Vec2i screen_coords[3]; 
 		for (int j = 0; j < 3; j++) {
 			world_coords[j]  = model.vert(face[j]);
-			screen_coords[j] = world_to_screen_coords(world_coords[j]);
 		}
 		
 		// calculate the face's normal, and use that to get rough lighting
@@ -144,7 +188,12 @@ void render(Model &model, TGAImage &image, Vec3f light_dir) {
 			continue;
 		}
 		
-		triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, mult_color(white, light_intensity));
+		triangle(
+			world_coords,
+			image, 
+			mult_color(white, light_intensity), 
+			z_buffer
+		);
 	}
 }
 
