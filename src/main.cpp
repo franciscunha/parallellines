@@ -13,8 +13,8 @@ const TGAColor red    = TGAColor(255, 0,   0,   255);
 const TGAColor green  = TGAColor(0,   255, 0,   255);
 const TGAColor blue   = TGAColor(0,   0,   255, 255);
 
-const int width = 256;
-const int height = 256;
+const int width = 512;
+const int height = 512;
 
 float lerp(float v0, float v1, float t) {
   return (1 - t) * v0 + t * v1;
@@ -112,16 +112,48 @@ void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
 
 }
 
+Vec2i world_to_screen_coords(Vec3f world_coords) {
+	return Vec2i(
+		(world_coords.x + 1) * (float)width  / (float)2,
+		(world_coords.y + 1) * (float)height / (float)2
+	); 
+}
+
+TGAColor mult_color(const TGAColor &c, float x) {
+	return TGAColor(c.r * x, c.g * x, c.b * x, c.a);
+}
+
+void render(Model &model, TGAImage &image, Vec3f light_dir) {
+	for (int i = 0; i < model.nfaces(); i++) { 
+		std::vector<int> face = model.face(i);
+		
+		// get face vertices in both coordinate systems
+		Vec3f world_coords[3];
+		Vec2i screen_coords[3]; 
+		for (int j = 0; j < 3; j++) {
+			world_coords[j]  = model.vert(face[j]);
+			screen_coords[j] = world_to_screen_coords(world_coords[j]);
+		}
+		
+		// calculate the face's normal, and use that to get rough lighting
+		Vec3f normal = ((world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0])).normalize();		
+		float light_intensity = normal * light_dir.normalize(); // dot product
+
+		// backface culling
+		if (light_intensity < 0) {
+			continue;
+		}
+		
+		triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, mult_color(white, light_intensity));
+	}
+}
+
 
 int main(int argc, char** argv) {
 	TGAImage image(width, height, TGAImage::RGB);
-
-	Vec2i t0[3] = {Vec2i(10, 70),   Vec2i(50, 160),  Vec2i(70, 80)}; 
-	Vec2i t1[3] = {Vec2i(180, 50),  Vec2i(150, 1),   Vec2i(70, 180)}; 
-	Vec2i t2[3] = {Vec2i(180, 150), Vec2i(120, 160), Vec2i(130, 180)}; 
-	triangle(t0[0], t0[1], t0[2], image, blue); 
-	triangle(t1[0], t1[1], t1[2], image, white); 
-	triangle(t2[0], t2[1], t2[2], image, green);
+	Model model(".\\obj\\african_head.obj");
+	
+	render(model, image, Vec3f(0, 0, -1));
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	image.write_tga_file(paths::output("img.tga"));
