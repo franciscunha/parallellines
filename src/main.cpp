@@ -193,7 +193,7 @@ void render(Model &model, TGAImage &image, Vec3f light_dir) {
 
 int main(int argc, char** argv) {
 	TGAImage image(width, height, TGAImage::RGB);
-	Model model(".\\obj\\african_head.obj");
+	Model model(".\\models\\african_head\\african_head.obj");
 	
 	render(model, image, Vec3f(0, 0, -1));
 
