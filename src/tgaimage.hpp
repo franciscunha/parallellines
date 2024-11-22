@@ -60,6 +60,10 @@ struct TGAColor {
 		}
 		return *this;
 	}
+
+	TGAColor operator *(float x) const {
+		return TGAColor(this->r * x, this->g * x, this->b * x, this->a);
+	};
 };
 
 
