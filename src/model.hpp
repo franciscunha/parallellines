@@ -6,6 +6,7 @@
 
 #include <vector>
 #include "geometry.hpp"
+#include "tgaimage.hpp"
 
 class Model {
 private:
@@ -13,6 +14,7 @@ private:
 	std::vector<Vec2f> uvs_;
 	std::vector<std::vector<int> > faces_;
 	std::vector<std::vector<int> > faces_uvs_;
+	TGAImage texture_;
 public:
 	Model(const char *filename);
 	~Model();
@@ -22,6 +24,8 @@ public:
 	Vec2f uv(int i);
 	std::vector<int> face(int idx);
 	std::vector<int> face_uvs(int idx);
+	void load_texture(const char *filename);
+	TGAColor sample_texture(Vec2f uv);
 };
 
 #endif //__MODEL_H__

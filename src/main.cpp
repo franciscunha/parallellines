@@ -51,13 +51,6 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
 	line(p0.x, p0.y, p1.x, p1.y, image, color);
 }
 
-Vec2i unit_to_discrete_coords(Vec2f unit_coords, int w, int h) {
-	return Vec2i(
-		std::round(unit_coords.x * (float)w),
-		std::round(unit_coords.y * (float)h)
-	); 
-}
-
 Vec2i world_to_screen_coords(Vec3f world_coords) {
 	return Vec2i(
 		std::round((world_coords.x + 1.0f) * (float)width  / 2.0f),
@@ -107,14 +100,33 @@ Vec3f barycentric(Vec2i triangle[3], Vec2i p) {
 	return Vec3f(1.0f - (cross.x+cross.y) / w, u, v); 
 }
 
-void triangle(
-	Vec3f vertices[3],
-	Vec2f uv[3],
-	float light_intensity,
-	TGAImage &diffuse_texture,
+void render_face(
+	Model &model,
+	int face_index,
+	Vec3f light_dir,
 	float z_buffer[width][height],
 	TGAImage &output
 ) { 	
+	// get face vertices and uv
+	std::vector<int> face_vert_indexes = model.face(face_index);
+	std::vector<int> face_uv_indexes = model.face_uvs(face_index);
+
+	Vec3f vertices[3];
+	Vec2f uv[3];
+	for (int j = 0; j < 3; j++) {
+		vertices[j] = model.vert(face_vert_indexes[j]);
+		uv[j] 		= model.uv(face_uv_indexes[j]);
+	}
+	
+	// calculate the face's normal, and use that to get rough lighting
+	Vec3f normal = ((vertices[2] - vertices[0]).cross(vertices[1] - vertices[0])).normalize();		
+	float light_intensity = normal.dot(light_dir.normalize());
+
+	// backface culling
+	if (light_intensity < 0) {
+		return;
+	}
+
 	// convert vertex from world coords to screen coords
 	Vec2i screen_coords[3];
 	for (int i = 0; i < 3; i++) {
@@ -148,9 +160,9 @@ void triangle(
 
 			// we want the pixel's z in world space - to know if one is in front of another
 			float pixel_z = 
-				barycentric_coords.x * vertices[0].z + 
-				barycentric_coords.y * vertices[1].z + 
-				barycentric_coords.z * vertices[2].z;
+				vertices[0].z * barycentric_coords.x + 
+				vertices[1].z * barycentric_coords.y + 
+				vertices[2].z * barycentric_coords.z;
 
 			if (z_buffer[x][y] > pixel_z) {
 				// there is already something drawn in front of this pixel
@@ -163,15 +175,14 @@ void triangle(
 				uv[0] * barycentric_coords.x + 
 				uv[1] * barycentric_coords.y + 
 				uv[2] * barycentric_coords.z;
-			Vec2i tex_coords = unit_to_discrete_coords(pixel_uv, diffuse_texture.get_width(), diffuse_texture.get_height());
-			TGAColor color = diffuse_texture.get(tex_coords.x, tex_coords.y);
+			TGAColor color = model.sample_texture(pixel_uv);
 
 			output.set(x, y, color * light_intensity);
 		}	
 	}
 }
 
-void render(Model &model, TGAImage &diffuse_texture, Vec3f light_dir, TGAImage &output_image) {
+void render_model(Model &model, Vec3f light_dir, TGAImage &output_image) {
 	// initialize z-buffer to negative infinity
 	float z_buffer[width][height];
 	for (int x = 0; x < width; x++) {
@@ -181,34 +192,7 @@ void render(Model &model, TGAImage &diffuse_texture, Vec3f light_dir, TGAImage &
 	}
 
 	for (int i = 0; i < model.nfaces(); i++) { 
-		std::vector<int> face_verts = model.face(i);
-		std::vector<int> face_uvs = model.face_uvs(i);
-
-		// get face vertices and uv
-		Vec3f world_coords[3];
-		Vec2f uv[3];
-		for (int j = 0; j < 3; j++) {
-			world_coords[j] = model.vert(face_verts[j]);
-			uv[j] 			= model.uv(face_uvs[j]);
-		}
-		
-		// calculate the face's normal, and use that to get rough lighting
-		Vec3f normal = ((world_coords[2] - world_coords[0]).cross(world_coords[1] - world_coords[0])).normalize();		
-		float light_intensity = normal.dot(light_dir.normalize());
-
-		// backface culling
-		if (light_intensity < 0) {
-			continue;
-		}
-
-		triangle(
-			world_coords,
-			uv,
-			light_intensity, 
-			diffuse_texture,
-			z_buffer,
-			output_image
-		);
+		render_face(model, i, light_dir, z_buffer, output_image);
 	}
 }
 
@@ -216,13 +200,10 @@ void render(Model &model, TGAImage &diffuse_texture, Vec3f light_dir, TGAImage &
 int main(int argc, char** argv) {
 	TGAImage output(width, height, TGAImage::RGB);
 	
-	TGAImage diffuse_texture;
-	diffuse_texture.read_tga_file(".\\models\\african_head\\african_head_diffuse.tga");
-	diffuse_texture.flip_vertically(); // so the origin is left bottom corner
-	
 	Model model(".\\models\\african_head\\african_head.obj");
+	model.load_texture(".\\models\\african_head\\african_head_diffuse.tga");
 	
-	render(model, diffuse_texture, Vec3f(0, 0, -1), output);
+	render_model(model, Vec3f(0, 0, -1), output);
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file(paths::output("img.tga"));

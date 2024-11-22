@@ -8,7 +8,7 @@
 #include <vector>
 #include "model.hpp"
 
-Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_() {
+Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), texture_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) {
@@ -77,4 +77,16 @@ Vec3f Model::vert(int i) {
 
 Vec2f Model::uv(int i) {
     return uvs_[i];
+}
+
+void Model::load_texture(const char *filename) {
+	texture_.read_tga_file(filename);
+	texture_.flip_vertically(); // so the origin is left bottom corner
+}
+
+TGAColor Model::sample_texture(Vec2f uv) {
+    return texture_.get(
+        std::round(uv.x * (float)texture_.get_width()), 
+        std::round(uv.y * (float)texture_.get_height())
+    );
 }
