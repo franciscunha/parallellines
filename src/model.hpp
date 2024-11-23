@@ -1,5 +1,5 @@
-// This file is written by Dmitry V. Sokolov (https://github.com/ssloy) and provided
-// as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
+// This file is forked from an initial version by Dmitry V. Sokolov (https://github.com/ssloy) that was
+// provided as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
 
 #ifndef __MODEL_H__
 #define __MODEL_H__
