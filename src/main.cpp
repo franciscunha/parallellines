@@ -103,6 +103,7 @@ Vec3f barycentric(Vec2i triangle[3], Vec2i p) {
 void render_face(
 	Model &model,
 	int face_index,
+	Matrix4 &transform,
 	Vec3f light_dir,
 	float z_buffer[width][height],
 	TGAImage &output
@@ -114,7 +115,7 @@ void render_face(
 	Vec3f vertices[3];
 	Vec2f uv[3];
 	for (int j = 0; j < 3; j++) {
-		vertices[j] = model.vert(face_vert_indexes[j]);
+		vertices[j] = (transform * model.vert(face_vert_indexes[j]).homogenize()).dehomogenize();
 		uv[j] 		= model.uv(face_uv_indexes[j]);
 	}
 	
@@ -182,7 +183,7 @@ void render_face(
 	}
 }
 
-void render_model(Model &model, Vec3f light_dir, TGAImage &output_image) {
+void render_model(Model &model, Vec3f light_dir, float camera_pos, TGAImage &output_image) {
 	// initialize z-buffer to negative infinity
 	float z_buffer[width][height];
 	for (int x = 0; x < width; x++) {
@@ -191,8 +192,11 @@ void render_model(Model &model, Vec3f light_dir, TGAImage &output_image) {
 		}
 	}
 
+	// calculate transform that will be used on each face (so far only projection)
+	Matrix4 transform = Matrix4::projection(camera_pos);
+
 	for (int i = 0; i < model.nfaces(); i++) { 
-		render_face(model, i, light_dir, z_buffer, output_image);
+		render_face(model, i, transform, light_dir, z_buffer, output_image);
 	}
 }
 
@@ -203,7 +207,7 @@ int main(int argc, char** argv) {
 	Model model(".\\models\\african_head\\african_head.obj");
 	model.load_texture(".\\models\\african_head\\african_head_diffuse.tga");
 	
-	render_model(model, Vec3f(0, 0, -1), output);
+	render_model(model, Vec3f(0, 0, -1), 5, output);
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file(paths::output("img.tga"));
