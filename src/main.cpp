@@ -111,20 +111,22 @@ void render_face(
 	// get face vertices and uv
 	std::vector<int> face_vert_indexes = model.face(face_index);
 	std::vector<int> face_uv_indexes = model.face_uvs(face_index);
+	std::vector<int> face_normal_indexes = model.face_normals(face_index);
 
 	Vec3f vertices[3];
 	Vec2f uv[3];
+	Vec3f normals[3];
 	for (int j = 0; j < 3; j++) {
 		vertices[j] = (transform * model.vert(face_vert_indexes[j]).homogenize()).dehomogenize();
 		uv[j] 		= model.uv(face_uv_indexes[j]);
+		normals[j]  = model.normal(face_normal_indexes[j]);
 	}
-	
-	// calculate the face's normal, and use that to get rough lighting
-	Vec3f normal = ((vertices[2] - vertices[0]).cross(vertices[1] - vertices[0])).normalize();		
-	float light_intensity = normal.dot(light_dir.normalize());
 
-	// backface culling
-	if (light_intensity < 0) {
+	Vec3f reverse_light_dir = (light_dir * (-1)).normalize();
+	
+	// calculate the face's normal, and use that for backface culling
+	Vec3f normal = ((vertices[1] - vertices[0]).cross(vertices[2] - vertices[0])).normalize();	
+	if (normal.dot(reverse_light_dir) < 0) {
 		return;
 	}
 
@@ -178,6 +180,16 @@ void render_face(
 				uv[2] * barycentric_coords.z;
 			TGAColor color = model.sample_texture(pixel_uv);
 
+			// (Gouraud shading) find pixel's light intensity
+			Vec3f pixel_normal = 
+				normals[0] * barycentric_coords.x + 
+				normals[1] * barycentric_coords.y + 
+				normals[2] * barycentric_coords.z;
+			float light_intensity = reverse_light_dir.dot(pixel_normal);
+			if (light_intensity <= 0) {
+				continue;
+			}
+
 			output.set(x, y, color * light_intensity);
 		}	
 	}
@@ -198,6 +210,7 @@ void render_model(Model &model, Vec3f light_dir, float camera_pos, TGAImage &out
 	for (int i = 0; i < model.nfaces(); i++) { 
 		render_face(model, i, transform, light_dir, z_buffer, output_image);
 	}
+	// render_face(model, 0, transform, light_dir, z_buffer, output_image);
 }
 
 

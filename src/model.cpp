@@ -32,24 +32,32 @@ Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), t
             Vec2f vt;
             for (int i=0;i<2;i++) iss >> vt.raw[i];
             uvs_.push_back(vt);
+        } else if (!line.compare(0, 3, "vn ")) {
+            iss >> trash >> trash;
+            Vec3f vn;
+            for (int i=0;i<3;i++) iss >> vn.raw[i];
+            normals_.push_back(vn);
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<int> v_indexes;
             std::vector<int> t_indexes;
-            int itrash, v_idx, t_idx;
+            std::vector<int> n_indexes;
+            int v_idx, t_idx, n_idx;
             iss >> trash;
-            while (iss >> v_idx >> trash >> t_idx >> trash >> itrash) {
+            while (iss >> v_idx >> trash >> t_idx >> trash >> n_idx) {
                 // in wavefront obj all indices start at 1, not zero
                 v_idx--;
                 t_idx--; 
+                n_idx--;
 
                 v_indexes.push_back(v_idx);
                 t_indexes.push_back(t_idx);
+                n_indexes.push_back(n_idx);
             }
             faces_.push_back(v_indexes);
             faces_uvs_.push_back(t_indexes);
+            faces_normals_.push_back(n_indexes);
         }
     }
-    std::cout << "# v# " << verts_.size() << " f# "  << faces_.size() << " t# " << uvs_.size() << std::endl;
 }
 
 Model::~Model() {
@@ -71,12 +79,20 @@ std::vector<int> Model::face_uvs(int idx) {
     return faces_uvs_[idx];
 }
 
+std::vector<int> Model::face_normals(int idx) {
+    return faces_normals_[idx];
+}
+
 Vec3f Model::vert(int i) {
     return verts_[i];
 }
 
 Vec2f Model::uv(int i) {
     return uvs_[i];
+}
+
+Vec3f Model::normal(int i) {
+    return normals_[i];
 }
 
 void Model::load_texture(const char *filename) {
