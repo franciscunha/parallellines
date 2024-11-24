@@ -16,10 +16,6 @@ const TGAColor blue   = TGAColor(0,   0,   255, 255);
 const int width = 400;
 const int height = 400;
 
-float lerp(float v0, float v1, float t) {
-  return (1 - t) * v0 + t * v1;
-}
-
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
 	
 	bool steep = false;
@@ -117,6 +113,7 @@ void render_face(
 	Vec2f uv[3];
 	Vec3f normals[3];
 	for (int j = 0; j < 3; j++) {
+		// also perform all transformations on each vertex
 		vertices[j] = (transform * model.vert(face_vert_indexes[j]).homogenize()).dehomogenize();
 		uv[j] 		= model.uv(face_uv_indexes[j]);
 		normals[j]  = model.normal(face_normal_indexes[j]);
@@ -195,6 +192,28 @@ void render_face(
 	}
 }
 
+/**
+ * Returns a view matrix.
+ */
+Matrix4 loot_at(Vec3f eye, Vec3f target, Vec3f up) {
+	Vec3f z = (eye - target).normalize();
+	Vec3f x = up.cross(z).normalize();
+	Vec3f y = z.cross(x).normalize();
+
+	Matrix4 translation = Matrix4::identity();
+	Matrix4 inv_basis = Matrix4::identity();
+
+	for (int i = 0; i < 3; i++) {
+		translation.m[i][3] = -eye.raw[i];
+
+		inv_basis.m[0][i] = x.raw[i];
+		inv_basis.m[1][i] = y.raw[i];
+		inv_basis.m[2][i] = z.raw[i];
+	}
+
+	return inv_basis * translation;
+}
+
 void render_model(Model &model, Vec3f light_dir, float camera_pos, TGAImage &output_image) {
 	// initialize z-buffer to negative infinity
 	float z_buffer[width][height];
@@ -204,15 +223,14 @@ void render_model(Model &model, Vec3f light_dir, float camera_pos, TGAImage &out
 		}
 	}
 
-	// calculate transform that will be used on each face (so far only projection)
-	Matrix4 transform = Matrix4::projection(camera_pos);
+	// calculate transform that will be used on each face (so far projection and view)
+	Matrix4 transform = Matrix4::projection(camera_pos) * loot_at(Vec3f(1, 1, 1), Vec3f(0, 0.3f, 0), Vec3f(0, 1, 0));
 
 	for (int i = 0; i < model.nfaces(); i++) { 
 		render_face(model, i, transform, light_dir, z_buffer, output_image);
 	}
 	// render_face(model, 0, transform, light_dir, z_buffer, output_image);
 }
-
 
 int main(int argc, char** argv) {
 	TGAImage output(width, height, TGAImage::RGB);

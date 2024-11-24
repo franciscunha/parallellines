@@ -4,3 +4,4 @@ Software rasterizer made following the course https://github.com/ssloy/tinyrende
 ## resources
 - https://github.com/ssloy/tinyrenderer
 - https://jtsorlinis.github.io/rendering-tutorial/
+- https://www.songho.ca/opengl/gl_camera.html
