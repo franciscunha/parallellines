@@ -13,12 +13,6 @@ Matrix4 Matrix4::identity() {
     return Matrix4();
 }
 
-Matrix4 Matrix4::projection(float c) {
-    Matrix4 _m = Matrix4();
-    _m.m[3][2] = -(1/c);
-    return _m;
-}
-
 Matrix4 Matrix4::operator *(const Matrix4& rhs) {
     Matrix4 result = Matrix4();
     const Matrix4& lhs = *this; // alias for clarity

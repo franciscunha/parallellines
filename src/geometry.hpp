@@ -98,7 +98,6 @@ public:
 
 	Matrix4();
     static Matrix4 identity();
-	static Matrix4 projection(float c);
 
 	Matrix4 operator *(const Matrix4& a);
     Vec4f   operator *(const Vec4f& v);
