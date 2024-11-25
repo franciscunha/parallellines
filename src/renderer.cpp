@@ -15,15 +15,20 @@ Renderer::Renderer(TGAImage &output_, Model &model_) :
     height(output_.get_height()),
     z_buffer(width * height, -std::numeric_limits<float>::max()),
 	light_dir(Vec3f(0, 0, -1))
-    // matrixes are be auto initialized to identity
-{ }
-
-// duplication is temporary: we're switching this to a matrix
-Vec2i world_to_screen_coords(Vec3f world_coords) {
-	return Vec2i(
-		std::round((world_coords.x + 1.0f) * (float)400  / 2.0f),
-		std::round((world_coords.y + 1.0f) * (float)400 / 2.0f)
-	); 
+{
+	// calculate viewport matrix
+	
+	constexpr int Z_DEPTH = 255;
+	// scaling part 
+	m_viewport.m[0][0] = (width   / 2.0f);
+	m_viewport.m[1][1] = (height  / 2.0f);
+	m_viewport.m[2][2] = (Z_DEPTH / 2.0f);
+	// translating part
+	for (int i = 0; i < 3; i++) {
+		m_viewport.m[i][3] = m_viewport.m[i][i];
+	}
+    
+	// other matrices are initialized to identity and may be changed through method calls
 }
 
 /**
@@ -77,10 +82,10 @@ void Renderer::render_face(int face_index) {
 		return;
 	}
 
-	// convert vertex from world coords to screen coords
+	// round vertices to pixel coords
 	Vec2i screen_coords[3];
 	for (int i = 0; i < 3; i++) {
-		screen_coords[i] = world_to_screen_coords(vertices[i]);
+		screen_coords[i] = Vec2i(std::round(vertices[i].x), std::round(vertices[i].y));
 	}
 
 
@@ -158,7 +163,7 @@ void Renderer::loot_at(Vec3f eye, Vec3f target, Vec3f up) {
 		inv_basis.m[2][i] = z.raw[i];
 	}
 
-	view = inv_basis * translation;
+	m_view = inv_basis * translation;
 }
 
 void Renderer::set_light_dir(Vec3f dir) {
@@ -166,14 +171,11 @@ void Renderer::set_light_dir(Vec3f dir) {
 }
 
 void Renderer::set_camera_distance(float c) {
-    projection = Matrix4::identity();
-    projection.m[3][2] = -(1/c);
+    m_projection.m[3][2] = -(1/c);
 }
 
 void Renderer::render() {
-
-	// calculate transform that will be used on each face (so far projection and view)
-	transform = projection * view;
+	transform = m_viewport * m_projection * m_view * m_model;
 
 	for (int i = 0; i < model.nfaces(); i++) { 
 		render_face(i);

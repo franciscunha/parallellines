@@ -15,9 +15,10 @@ private:
 
     Matrix4 transform;
 
-    Matrix4 projection;
-    Matrix4 view;
-    Matrix4 viewport;
+    Matrix4 m_model;
+    Matrix4 m_projection;
+    Matrix4 m_view;
+    Matrix4 m_viewport;
 
     Vec3f barycentric(Vec2i triangle[3], Vec2i p);
     void render_face(int face_index);
@@ -27,7 +28,7 @@ public:
 
     void set_light_dir(Vec3f dir);
     void set_camera_distance(float c);
-    void loot_at(Vec3f eye, Vec3f target, Vec3f up);
+    void loot_at(Vec3f eye, Vec3f target = Vec3f(0,0,0), Vec3f up = Vec3f(0,1,0));
 
     void render();
 };
