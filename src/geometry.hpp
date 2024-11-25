@@ -102,6 +102,7 @@ public:
 	Matrix4();
     static Matrix4 identity();
 
+	Matrix4 transpose();
 	bool inverse(Matrix4 &inverse);
 
 	Matrix4 operator *(const Matrix4& a);

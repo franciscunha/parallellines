@@ -13,6 +13,16 @@ Matrix4 Matrix4::identity() {
     return Matrix4();
 }
 
+Matrix4 Matrix4::transpose() {
+    Matrix4 t;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            t.m[i][j] = m[j][i];
+        }
+    }
+    return t;
+}
+
 float Matrix4::cofactor(int i_, int j_) {
     std::array<std::array<float, 3>, 3> submatrix;
     
