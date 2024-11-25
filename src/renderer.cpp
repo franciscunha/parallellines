@@ -42,7 +42,7 @@ namespace renderer {
 		void render_face(
 			int face_index, 
 			int width, 
-			std::vector<float> z_buffer, 
+			std::vector<float> &z_buffer, 
 			IShader &shader, 
 			TGAImage &output
 		) {
@@ -92,7 +92,7 @@ namespace renderer {
 						// there is already something drawn in front of this pixel
 						continue;
 					}
-					z_buffer[(x * width) + y] = pixel_z; // TODO I think there's a z-buffer bug somewhere here
+					z_buffer[(x * width) + y] = pixel_z;
 
 					// fragment shader
 					TGAColor color = TGAColor(0, 0, 0, 0);
