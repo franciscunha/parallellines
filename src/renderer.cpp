@@ -74,11 +74,10 @@ void Renderer::render_face(int face_index) {
 		normals[j]  = model.normal(face_normal_indexes[j]);
 	}
 
-	Vec3f reverse_light_dir = (light_dir * (-1)).normalize();
-	
 	// calculate the face's normal, and use that for backface culling
-	Vec3f normal = ((vertices[1] - vertices[0]).cross(vertices[2] - vertices[0])).normalize();	
-	if (normal.dot(reverse_light_dir) < 0) {
+	Vec3f normal = ((vertices[1] - vertices[0]).cross(vertices[2] - vertices[0]));	
+	Vec3f model_to_camera_dir = Vec3f(0, 0, 1);
+	if (normal.dot(model_to_camera_dir) < 0) {
 		return;
 	}
 
@@ -87,7 +86,6 @@ void Renderer::render_face(int face_index) {
 	for (int i = 0; i < 3; i++) {
 		screen_coords[i] = Vec2i(std::round(vertices[i].x), std::round(vertices[i].y));
 	}
-
 
 	// find the triangle's bounding box (bb)
 	Vec2i bounds[2] = {
@@ -100,6 +98,9 @@ void Renderer::render_face(int face_index) {
 			std::max({screen_coords[0].y, screen_coords[1].y, screen_coords[2].y})
 		)
 	};
+
+	// pre-compute this pixel-independent value, used later for shading
+	Vec3f reverse_light_dir = (light_dir * (-1)).normalize();
 
 	// iterate over pixels contained in bb, to check if each is in triangle
 	for (int x = bounds[0].x; x <= bounds[1].x; x++) {
