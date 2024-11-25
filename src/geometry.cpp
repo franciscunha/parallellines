@@ -13,6 +13,68 @@ Matrix4 Matrix4::identity() {
     return Matrix4();
 }
 
+float Matrix4::cofactor(int i_, int j_) {
+    std::array<std::array<float, 3>, 3> submatrix;
+    
+    int sub_i = 0;
+    for (int i = 0; i < 4; i++) {
+        if (i == i_) continue;
+        
+        int sub_j = 0;
+        for (int j = 0; j < 4; j++) {
+            if (j == j_) continue;
+            
+            submatrix[sub_i][sub_j] = m[i][j];
+            sub_j++;
+        }
+        sub_i++;
+    }
+
+    float det = Matrix3::determinant(submatrix);
+    int neg = ((i_+j_) % 2 == 0) ? 1 : -1;
+
+    return neg * det;
+}
+
+bool Matrix4::inverse(Matrix4 &inverse) {
+    // pre-compute cofactors
+    float cofactors[4][4];
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            cofactors[i][j] = cofactor(i, j);
+        }
+    }
+
+    // compute determinant
+    float det = 0.0f;
+    for (int j = 0; j < 4; j++) {
+        det += m[0][j] * cofactors[0][j];
+    }
+    if (std::abs(det) < std::numeric_limits<float>::epsilon()) {
+        // det == 0 -> non-invertible matrix
+        return false;
+    }
+    float inv_det = (1.0f / det);
+    
+    // compute adjoint
+    float adj[4][4] = {
+        {cofactors[0][0], cofactors[1][0], cofactors[2][0], cofactors[3][0]},
+        {cofactors[0][1], cofactors[1][1], cofactors[2][1], cofactors[3][1]},
+        {cofactors[0][2], cofactors[1][2], cofactors[2][2], cofactors[3][2]},
+        {cofactors[0][3], cofactors[1][3], cofactors[2][3], cofactors[3][3]},
+    };
+
+    // put them together to make the inverse
+    inverse = Matrix4();
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            inverse.m[i][j] = inv_det * adj[i][j];
+        }
+    }
+    
+    return true;
+}
+
 Matrix4 Matrix4::operator *(const Matrix4& rhs) {
     Matrix4 result = Matrix4();
     const Matrix4& lhs = *this; // alias for clarity
@@ -60,6 +122,16 @@ Matrix3::Matrix3() {
 
 Matrix3 Matrix3::identity() {
     return Matrix3();
+}
+
+float Matrix3::determinant(std::array<std::array<float, 3>, 3> &m) {
+    return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+         - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+         + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+}
+
+float Matrix3::determinant() {
+    return Matrix3::determinant(m);
 }
 
 Matrix4 Matrix3::homogenize() {

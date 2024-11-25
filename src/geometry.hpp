@@ -93,11 +93,16 @@ template <class t> std::ostream& operator<<(std::ostream& s, Vec4<t>& v) {
 }
 
 class Matrix4 {
+private:
+	float cofactor(int i, int j);
+
 public:
     std::array<std::array<float, 4>, 4> m;
 
 	Matrix4();
     static Matrix4 identity();
+
+	bool inverse(Matrix4 &inverse);
 
 	Matrix4 operator *(const Matrix4& a);
     Vec4f   operator *(const Vec4f& v);
@@ -112,6 +117,8 @@ public:
 	Matrix3();
     static Matrix3 identity();
 
+	static float determinant(std::array<std::array<float, 3>, 3> &m);
+	float determinant();
 	Matrix4 homogenize();
 
 	Matrix3 operator *(const Matrix3& a);
