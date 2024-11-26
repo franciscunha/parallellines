@@ -85,6 +85,10 @@ bool Matrix4::inverse(Matrix4 &inverse) {
     return true;
 }
 
+Vec3f Matrix4::mult(Vec3f& v, bool is_point) {
+    return (*this * v.homogenize(is_point)).dehomogenize();
+}
+
 Matrix4 Matrix4::operator *(const Matrix4& rhs) {
     Matrix4 result = Matrix4();
     const Matrix4& lhs = *this; // alias for clarity

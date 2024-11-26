@@ -7,6 +7,7 @@
 #include <cmath>
 #include <array>
 #include <ostream>
+#include "tgaimage.hpp"
 
 // forward declare vector types so they can reference each other
 template <class t> struct Vec2;
@@ -107,6 +108,7 @@ public:
 	Matrix4 transpose();
 	bool inverse(Matrix4 &inverse);
 
+    Vec3f   mult(Vec3f& v, bool is_point=true);
 	Matrix4 operator *(const Matrix4& a);
     Vec4f   operator *(const Vec4f& v);
 	

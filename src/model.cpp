@@ -8,7 +8,7 @@
 #include <vector>
 #include "model.hpp"
 
-Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), diffuse_() {
+Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), diffuse_(), normal_map_(), specular_()  {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) {
@@ -95,15 +95,23 @@ Vec3f Model::normal(int i) {
     return normals_[i];
 }
 
-void Model::load_texture(const char *filename, TextureType type) {
-	TGAImage *texture;
+TGAImage *Model::texture_of_type(TextureType type) {
     switch (type) {
         case TextureType::DIFFUSE:
-            texture = &diffuse_;
-            break;
+            return &diffuse_;
         case TextureType::NORMAL_MAP:
-            texture = &normal_map_;
-            break;
+            return &normal_map_;
+        case TextureType::SPECULAR:
+            return &specular_;
+    }
+    return NULL;
+}
+
+void Model::load_texture(const char *filename, TextureType type) {
+    TGAImage *texture = texture_of_type(type);
+    if (texture == NULL) {
+        std::cerr << "texture type doesn't exist" << std::endl;
+        return;
     }
 
     texture->read_tga_file(filename);
@@ -111,14 +119,10 @@ void Model::load_texture(const char *filename, TextureType type) {
 }
 
 TGAColor Model::sample_texture(Vec2f uv, TextureType type) {
-    TGAImage *texture;
-    switch (type) {
-        case TextureType::DIFFUSE:
-            texture = &diffuse_;
-            break;
-        case TextureType::NORMAL_MAP:
-            texture = &normal_map_;
-            break;
+    TGAImage *texture = texture_of_type(type);
+    if (texture == NULL) {
+        std::cerr << "texture type doesn't exist" << std::endl;
+        return TGAColor(0, 0, 0, 0);
     }
 
     return texture->get(

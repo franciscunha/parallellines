@@ -147,7 +147,7 @@ namespace renderer {
 		return inv_basis * translation;
 	}
 
-	void render(TGAImage &output, Model &model, IShader &shader) {
+	std::vector<float> render(TGAImage &output, Model &model, IShader &shader) {
 		std::vector<float> z_buffer =
 			std::vector<float>(output.get_width() * output.get_height(), -std::numeric_limits<float>::max());
 		
@@ -158,6 +158,8 @@ namespace renderer {
 		for (int i = 0; i < model.nfaces(); i++) { 
 			render_face(i, output.get_width(), z_buffer, shader, output);
 		}
+
+		return z_buffer;
 	}
 
 }

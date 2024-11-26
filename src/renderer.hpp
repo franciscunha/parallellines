@@ -25,5 +25,10 @@ namespace renderer {
     Matrix4 projection(float camera_distance);
     Matrix4 loot_at(Vec3f eye, Vec3f target = Vec3f(0,0,0), Vec3f up = Vec3f(0,1,0));
 
-    void render(TGAImage &output, Model &model, IShader &shader);
+    /**
+     * @brief Renders model to output image, according to shader's behaviour.
+     * 
+     * @return std::vector<float> z buffer created during rendering
+     */
+    std::vector<float> render(TGAImage &output, Model &model, IShader &shader);
 }

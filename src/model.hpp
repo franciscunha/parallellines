@@ -8,7 +8,7 @@
 #include "geometry.hpp"
 #include "tgaimage.hpp"
 
-enum TextureType { DIFFUSE, NORMAL_MAP };
+enum TextureType { DIFFUSE, NORMAL_MAP, SPECULAR };
 
 class Model {
 private:
@@ -20,6 +20,9 @@ private:
 	std::vector<std::vector<int> > faces_normals_;
 	TGAImage diffuse_;
 	TGAImage normal_map_;
+	TGAImage specular_;
+
+	TGAImage *texture_of_type(TextureType type);
 
 public:
 	Model(const char *filename);
