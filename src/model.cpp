@@ -8,7 +8,7 @@
 #include <vector>
 #include "model.hpp"
 
-Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), texture_() {
+Model::Model(const char *filename) : verts_(), uvs_(), faces_(), faces_uvs_(), diffuse_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) {
@@ -95,14 +95,34 @@ Vec3f Model::normal(int i) {
     return normals_[i];
 }
 
-void Model::load_texture(const char *filename) {
-	texture_.read_tga_file(filename);
-	texture_.flip_vertically(); // so the origin is left bottom corner
+void Model::load_texture(const char *filename, TextureType type) {
+	TGAImage *texture;
+    switch (type) {
+        case TextureType::DIFFUSE:
+            texture = &diffuse_;
+            break;
+        case TextureType::NORMAL_MAP:
+            texture = &normal_map_;
+            break;
+    }
+
+    texture->read_tga_file(filename);
+	texture->flip_vertically(); // so the origin is left bottom corner
 }
 
-TGAColor Model::sample_texture(Vec2f uv) {
-    return texture_.get(
-        std::round(uv.x * (float)texture_.get_width()), 
-        std::round(uv.y * (float)texture_.get_height())
+TGAColor Model::sample_texture(Vec2f uv, TextureType type) {
+    TGAImage *texture;
+    switch (type) {
+        case TextureType::DIFFUSE:
+            texture = &diffuse_;
+            break;
+        case TextureType::NORMAL_MAP:
+            texture = &normal_map_;
+            break;
+    }
+
+    return texture->get(
+        std::round(uv.x * (float)texture->get_width()), 
+        std::round(uv.y * (float)texture->get_height())
     );
 }

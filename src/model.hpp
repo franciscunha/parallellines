@@ -8,6 +8,8 @@
 #include "geometry.hpp"
 #include "tgaimage.hpp"
 
+enum TextureType { DIFFUSE, NORMAL_MAP };
+
 class Model {
 private:
 	std::vector<Vec3f> verts_;
@@ -16,7 +18,9 @@ private:
 	std::vector<std::vector<int> > faces_;
 	std::vector<std::vector<int> > faces_uvs_;
 	std::vector<std::vector<int> > faces_normals_;
-	TGAImage texture_;
+	TGAImage diffuse_;
+	TGAImage normal_map_;
+
 public:
 	Model(const char *filename);
 	~Model();
@@ -31,8 +35,8 @@ public:
 	std::vector<int> face_uvs(int idx);
 	std::vector<int> face_normals(int idx);
 
-	void load_texture(const char *filename);
-	TGAColor sample_texture(Vec2f uv);
+	void load_texture(const char *filename, TextureType type);
+	TGAColor sample_texture(Vec2f uv, TextureType type);
 };
 
 #endif //__MODEL_H__

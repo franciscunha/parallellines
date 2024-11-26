@@ -10,6 +10,8 @@
 
 
 struct GouraudShader : IShader {
+	Vec3f light_dir = Vec3f(0, 0, 1);
+
 	float varying_intensity[3];
 	Vec2f varying_uv[3];
 
@@ -21,7 +23,7 @@ struct GouraudShader : IShader {
 		varying_uv[vert_index] = model->uv(face_uv_indexes[vert_index]);
 
 		Vec3f normal = model->normal(face_normal_indexes[vert_index]);
-		varying_intensity[vert_index] = std::max(0.0f, normal.dot(Vec3f(0, 0, -1)));
+		varying_intensity[vert_index] = std::max(0.0f, normal.dot(light_dir));
 
 		return transform * model->vert(face_vert_indexes[vert_index]).homogenize();
 	}
@@ -35,7 +37,7 @@ struct GouraudShader : IShader {
 
 		// find the pixel's color by interpolating the diffuse texture
 		Vec2f pixel_uv = varying_uv[0] * bar.x + varying_uv[1] * bar.y + varying_uv[2] * bar.z;
-		color = model->sample_texture(pixel_uv) * light_intensity;
+		color = model->sample_texture(pixel_uv, TextureType::DIFFUSE) * light_intensity;
 
 		return true;
 	}
@@ -45,12 +47,13 @@ int main(int argc, char** argv) {
 	TGAImage output(400, 400, TGAImage::RGB);
 	
 	Model model("models/african_head/african_head.obj");
-	model.load_texture("models/african_head/african_head_diffuse.tga");
+	model.load_texture("models/african_head/african_head_diffuse.tga", TextureType::DIFFUSE);
+	model.load_texture("models/african_head/african_head_nm.tga", TextureType::NORMAL_MAP);
 
 	GouraudShader shader;
 
 	shader.m_projection = renderer::projection(5);
-	shader.m_view = renderer::loot_at(Vec3f(1, 0, -2));
+	shader.m_view = renderer::loot_at(Vec3f(0, 0, 1));
 	
 	renderer::render(output, model, shader);
 
