@@ -48,6 +48,7 @@ template <class t> struct Vec3 {
 	float 	  norm () const { return std::sqrt(x*x+y*y+z*z); }
 	Vec3<t> & normalize(t l=1) { *this = (*this)*(l/norm()); return *this; }
 	Vec4<t>   homogenize(bool is_point = true) { return Vec4<t>(x, y, z, is_point ? 1 : 0); }
+	static Vec3<t> from_tgacolor(TGAColor c) { return Vec3<t>(c.r, c.g, c.b); }
 	
 	template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 };
@@ -66,6 +67,7 @@ template <class t> struct Vec4 {
 	inline t       dot  (const Vec4<t> &v) 		const { return x*v.x + y*v.y + z*v.z + w*v.w; }
 
 	Vec3<t> dehomogenize() { if (std::abs(w) < 1e-6) { return Vec3<t>(x, y, z); } return Vec3<t>(x/w, y/w, z/w); }
+	static Vec4<t> from_tgacolor(TGAColor c) { return Vec4<t>(c.r, c.g, c.b, c.a); }
 	
 	template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 };
