@@ -2,11 +2,11 @@
 #include <utility>
 #include <iostream>
 #include <algorithm>
-#include <array>
 
 #include "../include/tgaimage.hpp"
 #include "../include/model.hpp"
 #include "../include/renderer.hpp"
+#include "../include/line_renderer.hpp"
 
 struct PhongShader : IShader
 {
@@ -18,8 +18,8 @@ struct PhongShader : IShader
 
 	virtual Vec4f vertex(int face_index, int vert_index)
 	{
-		std::vector<int> face_vert_indexes = model->face(face_index);
-		std::vector<int> face_uv_indexes = model->face_uvs(face_index);
+		int *face_vert_indexes = model->face(face_index);
+		int *face_uv_indexes = model->face_uvs(face_index);
 
 		varying_uv[vert_index] = model->uv(face_uv_indexes[vert_index]);
 		return transform * model->vert(face_vert_indexes[vert_index]).homogenize();
@@ -50,7 +50,7 @@ struct PhongShader : IShader
 	}
 };
 
-int main(int argc, char **argv)
+void renderer_demo() 
 {
 	TGAImage output(1024, 1024, TGAImage::RGB);
 
@@ -75,6 +75,22 @@ int main(int argc, char **argv)
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file("images/out.tga");
+}
+
+void lines_demo()
+{
+	TGAImage output(1024, 1024, TGAImage::RGB);
+	Model model("models/african_head/african_head.obj");
+	
+	line_renderer::wireframe(model, output, TGAColor(255, 255, 255, 255));
+
+	output.flip_vertically(); // so the origin is left bottom corner
+	output.write_tga_file("images/out.tga");
+}
+
+int main(int argc, char **argv)
+{
+	renderer_demo();
 
 	return 0;
 }

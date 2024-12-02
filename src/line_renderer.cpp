@@ -56,7 +56,7 @@ namespace line_renderer
 
 		for (int i = 0; i < model.nfaces(); i++)
 		{
-			std::vector<int> face_vertices = model.face(i);
+			int *face_vertices = model.face(i);
 
 			for (int j = 0; j < 3; j++)
 			{
