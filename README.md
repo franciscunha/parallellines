@@ -1,6 +1,6 @@
 # tinyrenderer
 
-![](renders/african_head.jpg)
+![](images/african_head.jpg)
 *Image rendered with this rasterizer.*
 
 Software rasterizer made while following the course https://github.com/ssloy/tinyrenderer.
@@ -15,9 +15,7 @@ Next steps: Porting to the GPU with CUDA.
 
 `main.cpp`, `line_renderer.*` and `renderer.*` were written completely by me. 
 
-`geometry.*` and `model.*` are forked from an initial version by [ssloy](https://github.com/ssloy/) with many improvements to better fit my version of the rasterizer.
-
-`tgaimage.*` is fully written by [ssloy](https://github.com/ssloy/) for the course. 
+`geometry.*` and `model.*` are forked from an initial version by [ssloy](https://github.com/ssloy/) with many improvements to better fit my version of the rasterizer. `tgaimage.*` is fully written by [ssloy](https://github.com/ssloy/) for the course. 
 
 ## Resources used
 - https://github.com/ssloy/tinyrenderer
