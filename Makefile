@@ -1,22 +1,17 @@
 # Adapted from https://github.com/TravisWThompson1/Makefile_Example_CUDA_CPP_To_Executable
-
-###########################################################
+# Windows-only, using Visual Studio toolchain
 
 ## USER SPECIFIC DIRECTORIES ##
 
 # CUDA directory:
 CUDA_ROOT_DIR=D:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6
 
-##########################################################
-
 ## CC COMPILER OPTIONS ##
 
 # CC compiler options:
-CC=g++
+CC=cl.exe
 CC_FLAGS=
-CC_LIBS= -lm
-
-##########################################################
+CC_LIBS=
 
 ## NVCC COMPILER OPTIONS ##
 
@@ -25,14 +20,10 @@ NVCC=nvcc
 NVCC_FLAGS=
 NVCC_LIBS=
 
-# CUDA library directory:
-CUDA_LIB_DIR= -L"$(CUDA_ROOT_DIR)/lib/x64"
 # CUDA include directory:
-CUDA_INC_DIR= -I"$(CUDA_ROOT_DIR)/include"
+CUDA_INC_DIR=/I"$(CUDA_ROOT_DIR)/include"
 # CUDA linking libraries:
-CUDA_LINK_LIBS= -lcudart
-
-##########################################################
+CUDA_LINK_LIBS="$(CUDA_ROOT_DIR)/lib/x64/cudart.lib"
 
 ## Project file structure ##
 
@@ -45,35 +36,32 @@ OBJ_DIR = bin
 # Include header file diretory:
 INC_DIR = include
 
-##########################################################
-
 ## Make variables ##
 
 # Target executable name:
-EXE = tinyrenderer
+EXE = parallellines
 
 # Object files:
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.cu))
-
-##########################################################
+OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.obj,$(wildcard $(SRC_DIR)/*.cpp)) \
+       $(patsubst $(SRC_DIR)/%.cu,$(OBJ_DIR)/%.obj,$(wildcard $(SRC_DIR)/*.cu))
 
 ## Compile ##
 
 # Link c++ and CUDA compiled object files to target executable:
 $(EXE) : $(OBJS)
-	$(CC) $(CC_FLAGS) $(OBJS) -o $@ $(CUDA_INC_DIR) $(CUDA_LIB_DIR) $(CUDA_LINK_LIBS)
+	$(CC) $(OBJS) /Fe$@ $(CUDA_LINK_LIBS)
 
 # Compile main .cpp file to object files:
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
-	$(CC) $(CC_FLAGS) -c $< -o $@
+$(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cpp
+	$(CC) $(CC_FLAGS) -c $< /Fo$@
 
 # Compile C++ source files to object files:
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp $(INC_DIR)/%.hpp
-	$(CC) $(CC_FLAGS) -c $< -o $@
+$(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cpp $(INC_DIR)/%.hpp
+	$(CC) $(CC_FLAGS) -c $< /Fo$@
 
 # Compile CUDA source files to object files:
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cu $(INC_DIR)/%.cuh
-	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+$(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cu $(INC_DIR)/%.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
 
 # Clean objects in object directory.
 clean:
