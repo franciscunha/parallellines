@@ -3,6 +3,7 @@
 #include <utility>
 #include <iostream>
 #include <algorithm>
+#include <limits>
 #include <array>
 
 #include "../include/renderer.hpp"

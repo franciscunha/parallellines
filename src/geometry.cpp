@@ -1,3 +1,4 @@
+#include <limits>
 #include "../include/geometry.hpp"
 
 Matrix4::Matrix4()
