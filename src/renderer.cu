@@ -1,11 +1,7 @@
 
-#include <cmath>
-#include <utility>
-#include <iostream>
-#include <algorithm>
-#include <array>
+#include <limits>
 
-#include "../include/renderer.hpp"
+#include "../include/renderer.cuh"
 
 namespace renderer
 {
@@ -26,7 +22,7 @@ namespace renderer
 			Vec3f cross /* (u*w, v*w, w) */ = Vec3f(vAB.x, vAC.x, vPA.x).cross(Vec3f(vAB.y, vAC.y, vPA.y));
 
 			float w = cross.z;
-			if (std::abs(w) < std::numeric_limits<float>::epsilon())
+			if (abs(w) < 1e-6)
 			{
 				// w is actually the triangle's area, such that w == 0 indicates a degenerate triangle
 				// in which case return a negative coordinate so that it is discarded
@@ -42,18 +38,18 @@ namespace renderer
 			return Vec3f(1.0f - (cross.x + cross.y) / w, u, v);
 		}
 
-		void render_face(
+		__global__ void render_face(
 			int face_index,
 			int width,
-			std::vector<float> &z_buffer,
-			IShader &shader,
-			TGAImage &output)
+			float *z_buffer,
+			IShader *shader,
+			TGAImage *output)
 		{
 			// vertex shader
 			Vec3f vertices[3];
 			for (int i = 0; i < 3; i++)
 			{
-				vertices[i] = shader.vertex(face_index, i).dehomogenize();
+				vertices[i] = shader->vertex(face_index, i).dehomogenize();
 			}
 
 			// backface culling
@@ -67,11 +63,11 @@ namespace renderer
 			// triangle's bounding box (bb)
 			Vec2i bounds[2] = {
 				Vec2i(
-					std::min({vertices[0].x, vertices[1].x, vertices[2].x}),
-					std::min({vertices[0].y, vertices[1].y, vertices[2].y})),
+					min(vertices[0].x, min(vertices[1].x, vertices[2].x)),
+					min(vertices[0].y, min(vertices[1].y, vertices[2].y))),
 				Vec2i(
-					std::max({vertices[0].x, vertices[1].x, vertices[2].x}),
-					std::max({vertices[0].y, vertices[1].y, vertices[2].y}))};
+					max(vertices[0].x, max(vertices[1].x, vertices[2].x)),
+					max(vertices[0].y, max(vertices[1].y, vertices[2].y)))};
 
 			// iterate over pixels contained in bb
 			for (int x = bounds[0].x; x <= bounds[1].x; x++)
@@ -102,12 +98,12 @@ namespace renderer
 
 					// fragment shader
 					TGAColor color = TGAColor(0, 0, 0, 0);
-					if (!shader.fragment(barycentric_coords, color))
+					if (!shader->fragment(barycentric_coords, color))
 					{
 						continue;
 					}
 
-					output.set(x, y, color);
+					output->set(x, y, color);
 				}
 			}
 		}
@@ -159,21 +155,26 @@ namespace renderer
 		return inv_basis * translation;
 	}
 
-	std::vector<float> render(TGAImage &output, Model &model, IShader &shader)
+	void render(TGAImage &output, Model &model, IShader &shader)
 	{
-		std::vector<float> z_buffer =
-			std::vector<float>(output.get_width() * output.get_height(), -std::numeric_limits<float>::max());
+		size_t z_buffer_size = output.get_width() * output.get_height();
+		float* z_buffer;
+		cudaMalloc(&z_buffer, z_buffer_size * sizeof(float));
+		for (int i = 0; i < z_buffer_size; i++) 
+		{
+			z_buffer[i] = -std::numeric_limits<float>::max(); // TODO check if initialization from host works
+		}
 
 		shader.m_viewport = viewport(output.get_width(), output.get_height());
 		shader.transform = shader.m_viewport * shader.m_projection * shader.m_view;
 		shader.model = &model;
 
+		// TODO cudaMemCopy the parameters to device
+
 		for (int i = 0; i < model.nfaces(); i++)
 		{
-			render_face(i, output.get_width(), z_buffer, shader, output);
+			// render_face<<<1, 1>>>(i, output.get_width(), z_buffer, &shader, &output);
 		}
-
-		return z_buffer;
 	}
 
 }

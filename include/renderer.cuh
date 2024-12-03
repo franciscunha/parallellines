@@ -16,8 +16,8 @@ struct IShader
 
     Model *model;
 
-    virtual Vec4f vertex(int face_index, int vert_index) = 0;
-    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
+    __device__ Vec4f vertex(int face_index, int vert_index) { return Vec4f(0, 0, 0, 0); };
+    __device__ bool fragment(Vec3f bar, TGAColor &color) { return false; };
 };
 
 namespace renderer
@@ -29,8 +29,6 @@ namespace renderer
 
     /**
      * @brief Renders model to output image, according to shader's behaviour.
-     *
-     * @return std::vector<float> z buffer created during rendering
      */
-    std::vector<float> render(TGAImage &output, Model &model, IShader &shader);
+    void render(TGAImage &output, Model &model, IShader &shader);
 }
