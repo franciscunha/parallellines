@@ -35,19 +35,19 @@ struct TGAColor {
 	};
 	int bytespp;
 
-	TGAColor() : val(0), bytespp(1) {
+	__host__ __device__ TGAColor() : val(0), bytespp(1) {
 	}
 
-	TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A) : b(B), g(G), r(R), a(A), bytespp(4) {
+	__host__ __device__ TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A) : b(B), g(G), r(R), a(A), bytespp(4) {
 	}
 
-	TGAColor(int v, int bpp) : val(v), bytespp(bpp) {
+	__host__ __device__ TGAColor(int v, int bpp) : val(v), bytespp(bpp) {
 	}
 
-	TGAColor(const TGAColor &c) : val(c.val), bytespp(c.bytespp) {
+	__host__ __device__ TGAColor(const TGAColor &c) : val(c.val), bytespp(c.bytespp) {
 	}
 
-	TGAColor(const unsigned char *p, int bpp) : val(0), bytespp(bpp) {
+	__host__ __device__ TGAColor(const unsigned char *p, int bpp) : val(0), bytespp(bpp) {
 		for (int i=0; i<bpp; i++) {
 			raw[i] = p[i];
 		}
@@ -91,7 +91,7 @@ public:
 	bool flip_vertically();
 	bool scale(int w, int h);
 	TGAColor get(int x, int y);
-	bool set(int x, int y, TGAColor c);
+	__host__ __device__ bool set(int x, int y, TGAColor c);
 	~TGAImage();
 	TGAImage & operator =(const TGAImage &img);
 	int get_width();

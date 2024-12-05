@@ -7,7 +7,7 @@
 #include <cmath>
 #include <array>
 #include <ostream>
-#include "tgaimage.hpp"
+#include "tgaimage.cuh"
 
 // forward declare vector types so they can reference each other
 template <class t>
@@ -32,13 +32,13 @@ struct Vec2
 		};
 		t raw[2];
 	};
-	Vec2() : u(0), v(0) {}
-	Vec2(t _u, t _v) : u(_u), v(_v) {}
+	__host__ __device__ Vec2() : u(0), v(0) {}
+	__host__ __device__ Vec2(t _u, t _v) : u(_u), v(_v) {}
 
-	inline Vec2<t> operator+(const Vec2<t> &V) const { return Vec2<t>(u + V.u, v + V.v); }
-	inline Vec2<t> operator-(const Vec2<t> &V) const { return Vec2<t>(u - V.u, v - V.v); }
-	inline Vec2<t> operator*(float f) const { return Vec2<t>(u * f, v * f); }
-	inline t dot(const Vec2<t> &v) const { return x * v.x + y * v.y; }
+	__host__ __device__ inline Vec2<t> operator+(const Vec2<t> &V) const { return Vec2<t>(u + V.u, v + V.v); }
+	__host__ __device__ inline Vec2<t> operator-(const Vec2<t> &V) const { return Vec2<t>(u - V.u, v - V.v); }
+	__host__ __device__ inline Vec2<t> operator*(float f) const { return Vec2<t>(u * f, v * f); }
+	__host__ __device__ inline t dot(const Vec2<t> &v) const { return x * v.x + y * v.y; }
 
 	template <class>
 	friend std::ostream &operator<<(std::ostream &s, Vec2<t> &v);
@@ -59,14 +59,14 @@ struct Vec3
 		};
 		t raw[3];
 	};
-	Vec3() : x(0), y(0), z(0) {}
-	Vec3(t _x, t _y, t _z) : x(_x), y(_y), z(_z) {}
+	__host__ __device__ Vec3() : x(0), y(0), z(0) {}
+	__host__ __device__ Vec3(t _x, t _y, t _z) : x(_x), y(_y), z(_z) {}
 
-	inline Vec3<t> operator+(const Vec3<t> &v) const { return Vec3<t>(x + v.x, y + v.y, z + v.z); }
-	inline Vec3<t> operator-(const Vec3<t> &v) const { return Vec3<t>(x - v.x, y - v.y, z - v.z); }
-	inline Vec3<t> operator*(float f) const { return Vec3<t>(x * f, y * f, z * f); }
-	inline t dot(const Vec3<t> &v) const { return x * v.x + y * v.y + z * v.z; }
-	inline Vec3<t> cross(const Vec3<t> &v) const { return Vec3<t>(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x); }
+	__host__ __device__ inline Vec3<t> operator+(const Vec3<t> &v) const { return Vec3<t>(x + v.x, y + v.y, z + v.z); }
+	__host__ __device__ inline Vec3<t> operator-(const Vec3<t> &v) const { return Vec3<t>(x - v.x, y - v.y, z - v.z); }
+	__host__ __device__ inline Vec3<t> operator*(float f) const { return Vec3<t>(x * f, y * f, z * f); }
+	__host__ __device__ inline t dot(const Vec3<t> &v) const { return x * v.x + y * v.y + z * v.z; }
+	__host__ __device__ inline Vec3<t> cross(const Vec3<t> &v) const { return Vec3<t>(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x); }
 
 	float norm() const { return std::sqrt(x * x + y * y + z * z); }
 	Vec3<t> &normalize(t l = 1)
@@ -75,7 +75,7 @@ struct Vec3
 		return *this;
 	}
 	Vec4<t> homogenize(bool is_point = true) { return Vec4<t>(x, y, z, is_point ? 1 : 0); }
-	static Vec3<t> from_tgacolor(TGAColor c) { return Vec3<t>(c.r, c.g, c.b); }
+	__host__ __device__ static Vec3<t> from_tgacolor(TGAColor c) { return Vec3<t>(c.r, c.g, c.b); }
 
 	template <class>
 	friend std::ostream &operator<<(std::ostream &s, Vec3<t> &v);
@@ -92,23 +92,23 @@ struct Vec4
 		};
 		t raw[4];
 	};
-	Vec4() : x(0), y(0), z(0), w(0) {}
-	Vec4(t _x, t _y, t _z, t _w) : x(_x), y(_y), z(_z), w(_w) {}
+	__host__ __device__ Vec4() : x(0), y(0), z(0), w(0) {}
+	__host__ __device__ Vec4(t _x, t _y, t _z, t _w) : x(_x), y(_y), z(_z), w(_w) {}
 
-	inline Vec4<t> operator+(const Vec4<t> &v) const { return Vec4<t>(x + v.x, y + v.y, z + v.z, w + v.w); }
-	inline Vec4<t> operator-(const Vec4<t> &v) const { return Vec4<t>(x - v.x, y - v.y, z - v.z, w - v.w); }
-	inline Vec4<t> operator*(float f) const { return Vec4<t>(x * f, y * f, z * f, w * f); }
-	inline t dot(const Vec4<t> &v) const { return x * v.x + y * v.y + z * v.z + w * v.w; }
+	__host__ __device__ inline Vec4<t> operator+(const Vec4<t> &v) const { return Vec4<t>(x + v.x, y + v.y, z + v.z, w + v.w); }
+	__host__ __device__ inline Vec4<t> operator-(const Vec4<t> &v) const { return Vec4<t>(x - v.x, y - v.y, z - v.z, w - v.w); }
+	__host__ __device__ inline Vec4<t> operator*(float f) const { return Vec4<t>(x * f, y * f, z * f, w * f); }
+	__host__ __device__ inline t dot(const Vec4<t> &v) const { return x * v.x + y * v.y + z * v.z + w * v.w; }
 
-	Vec3<t> dehomogenize()
+	__host__ __device__ Vec3<t> dehomogenize()
 	{
-		if (std::abs(w) < 1e-6)
+		if ((w >= 0 ? w : (w * -1)) < 1e-6)
 		{
 			return Vec3<t>(x, y, z);
 		}
 		return Vec3<t>(x / w, y / w, z / w);
 	}
-	static Vec4<t> from_tgacolor(TGAColor c) { return Vec4<t>(c.r, c.g, c.b, c.a); }
+	__host__ __device__ static Vec4<t> from_tgacolor(TGAColor c) { return Vec4<t>(c.r, c.g, c.b, c.a); }
 
 	template <class>
 	friend std::ostream &operator<<(std::ostream &s, Vec3<t> &v);

@@ -13,7 +13,7 @@ namespace renderer
 		 * Given three vertices of a triangle and a point P, returns the barycentric coordinates of P in relation to the triangle.
 		 * If triangle is degenerate, returns a negative coordinate in X.
 		 */
-		Vec3f barycentric(Vec3f triangle[3], Vec2i p)
+		__device__ Vec3f barycentric(Vec3f triangle[3], Vec2i p)
 		{
 			Vec3f vAB = triangle[1] - triangle[0];
 			Vec3f vAC = triangle[2] - triangle[0];
@@ -173,7 +173,7 @@ namespace renderer
 
 		for (int i = 0; i < model.nfaces(); i++)
 		{
-			// render_face<<<1, 1>>>(i, output.get_width(), z_buffer, &shader, &output);
+			render_face<<<1, 1>>>(i, output.get_width(), z_buffer, &shader, &output);
 		}
 	}
 
