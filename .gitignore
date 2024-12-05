@@ -1,4 +1,6 @@
 .vscode
 bin
-*.exe
+/*.exe
+/*.exp
+/*.lib
 images/*.tga

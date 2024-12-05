@@ -17,7 +17,7 @@ CC_LIBS=
 
 # NVCC compiler options:
 NVCC=nvcc
-NVCC_FLAGS=
+NVCC_FLAGS=-dc
 NVCC_LIBS=
 
 # CUDA include directory:
@@ -49,7 +49,7 @@ OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.obj,$(wildcard $(SRC_DIR)/*.cpp)
 
 # Link c++ and CUDA compiled object files to target executable:
 $(EXE) : $(OBJS)
-	$(CC) $(OBJS) /Fe$@ $(CUDA_LINK_LIBS)
+	$(NVCC) $(OBJS) $(CUDA_LINK_LIBS) -o $@
 
 # Compile main.cu file to object files:
 $(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cu
