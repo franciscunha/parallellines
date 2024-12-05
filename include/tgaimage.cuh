@@ -90,12 +90,12 @@ public:
 	bool flip_horizontally();
 	bool flip_vertically();
 	bool scale(int w, int h);
-	TGAColor get(int x, int y);
+	__host__ __device__ TGAColor get(int x, int y);
 	__host__ __device__ bool set(int x, int y, TGAColor c);
 	~TGAImage();
 	TGAImage & operator =(const TGAImage &img);
-	int get_width();
-	int get_height();
+	__host__ __device__ int get_width();
+	__host__ __device__ int get_height();
 	int get_bytespp();
 	unsigned char *buffer();
 	void clear();

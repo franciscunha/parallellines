@@ -85,10 +85,10 @@ Model::Model(const char *filename) : normal_map_(), specular_()
 
     verts_ = new Vec3f[verts.size()];
     std::copy(verts.begin(), verts.end(), verts_);
-    
+
     uvs_ = new Vec2f[uvs.size()];
     std::copy(uvs.begin(), uvs.end(), uvs_);
-    
+
     normals_ = new Vec3f[normals.size()];
     std::copy(normals.begin(), normals.end(), normals_);
 
@@ -108,7 +108,7 @@ Model::Model(const char *filename) : normal_map_(), specular_()
     }
 }
 
-Model::~Model() 
+Model::~Model()
 {
     delete[] verts_;
     delete[] uvs_;
@@ -118,23 +118,7 @@ Model::~Model()
     delete[] faces_normals_;
 }
 
-int Model::nverts() { return nverts_; }
-
-int Model::nfaces() { return nfaces_; }
-
-int *Model::face(int idx) { return &faces_[idx * 3]; }
-
-int *Model::face_uvs(int idx) { return &faces_uvs_[idx * 3]; }
-
-int *Model::face_normals(int idx) { return &faces_normals_[idx * 3]; }
-
-Vec3f Model::vert(int i) { return verts_[i]; }
-
-Vec2f Model::uv(int i) { return uvs_[i]; }
-
-Vec3f Model::normal(int i) { return normals_[i]; }
-
-TGAImage *Model::texture_of_type(TextureType type)
+__host__ __device__ TGAImage *Model::texture_of_type(TextureType type)
 {
     switch (type)
     {
@@ -145,13 +129,13 @@ TGAImage *Model::texture_of_type(TextureType type)
     case TextureType::SPECULAR:
         return &specular_;
     }
-    return NULL;
+    return nullptr;
 }
 
 void Model::load_texture(const char *filename, TextureType type)
 {
     TGAImage *texture = texture_of_type(type);
-    if (texture == NULL)
+    if (texture == nullptr)
     {
         std::cerr << "texture type doesn't exist" << std::endl;
         return;
@@ -161,12 +145,11 @@ void Model::load_texture(const char *filename, TextureType type)
     texture->flip_vertically(); // so the origin is left bottom corner
 }
 
-TGAColor Model::sample_texture(Vec2f uv, TextureType type)
+__host__ __device__ TGAColor Model::sample_texture(Vec2f uv, TextureType type)
 {
     TGAImage *texture = texture_of_type(type);
-    if (texture == NULL)
+    if (texture == nullptr)
     {
-        std::cerr << "texture type doesn't exist" << std::endl;
         return TGAColor(0, 0, 0, 0);
     }
 

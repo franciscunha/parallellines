@@ -310,7 +310,7 @@ bool TGAImage::unload_rle_data(std::ofstream &out)
 	return true;
 }
 
-TGAColor TGAImage::get(int x, int y)
+__host__ __device__ TGAColor TGAImage::get(int x, int y)
 {
 	if (!data || x < 0 || y < 0 || x >= width || y >= height)
 	{
@@ -334,12 +334,12 @@ int TGAImage::get_bytespp()
 	return bytespp;
 }
 
-int TGAImage::get_width()
+__host__ __device__ int TGAImage::get_width()
 {
 	return width;
 }
 
-int TGAImage::get_height()
+__host__ __device__ int TGAImage::get_height()
 {
 	return height;
 }
