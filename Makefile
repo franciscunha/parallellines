@@ -51,9 +51,9 @@ OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.obj,$(wildcard $(SRC_DIR)/*.cpp)
 $(EXE) : $(OBJS)
 	$(CC) $(OBJS) /Fe$@ $(CUDA_LINK_LIBS)
 
-# Compile main .cpp file to object files:
-$(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cpp
-	$(CC) $(CC_FLAGS) -c $< /Fo$@
+# Compile main.cu file to object files:
+$(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
 
 # Compile C++ source files to object files:
 $(OBJ_DIR)/%.obj : $(SRC_DIR)/%.cpp $(INC_DIR)/%.hpp
