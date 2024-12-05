@@ -3,7 +3,7 @@
 
 #include "../include/renderer.cuh"
 
-#define NUM_THREADS 256
+#define BLOCK_SIZE 256
 
 namespace renderer
 {
@@ -166,12 +166,15 @@ namespace renderer
 
 	void render(TGAImage &output, Model &model, IShader &shader, size_t sizeof_shader)
 	{
+		// TODO fix!
+
 		// initialize z-buffer
 		size_t z_buffer_size = output.get_width() * output.get_height();
 		float *d_z_buffer;
 		cudaMalloc(&d_z_buffer, z_buffer_size * sizeof(float));
 
-		initialize_z_buffer<<<z_buffer_size / NUM_THREADS, NUM_THREADS>>>(d_z_buffer, z_buffer_size, -std::numeric_limits<float>::max());
+		size_t num_blocks = std::ceil(z_buffer_size / (float)BLOCK_SIZE);
+		initialize_z_buffer<<<num_blocks, BLOCK_SIZE>>>(d_z_buffer, z_buffer_size, -std::numeric_limits<float>::max());
 
 		// create device pointers for parameters
 		TGAImage *d_output_image;

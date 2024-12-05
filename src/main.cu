@@ -29,7 +29,7 @@ void renderer_demo()
 
 void lines_demo()
 {
-	TGAImage output(1024, 1024, TGAImage::RGB);
+	TGAImage output(256, 256, TGAImage::RGB);
 	Model model("models/african_head/african_head.obj");
 	
 	line_renderer::wireframe(model, output, TGAColor(255, 255, 255, 255));
@@ -40,7 +40,7 @@ void lines_demo()
 
 int main(int argc, char **argv)
 {
-	renderer_demo();
+	lines_demo();
 
 	return 0;
 }
