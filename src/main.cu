@@ -13,7 +13,7 @@
 
 void renderer_demo() 
 {
-	TGAImage output(1024, 1024, TGAImage::RGB);
+	TGAImage output(256, 256, TGAImage::RGB);
 
 	Model model("models/african_head/african_head.obj");
 	model.load_texture("models/african_head/african_head_diffuse.tga", TextureType::DIFFUSE);
@@ -21,7 +21,7 @@ void renderer_demo()
 	model.load_texture("models/african_head/african_head_nm.tga", TextureType::NORMAL_MAP);
 
 	PhongShader shader = PhongShader();
-	renderer::render(output, model, shader);
+	renderer::render(output, model, shader, sizeof(PhongShader));
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file("images/out.tga");

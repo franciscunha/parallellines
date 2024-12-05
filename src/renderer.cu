@@ -1,7 +1,10 @@
 
 #include <limits>
+#include <typeinfo>
 
 #include "../include/renderer.cuh"
+
+#define NUM_THREADS 256
 
 namespace renderer
 {
@@ -108,6 +111,13 @@ namespace renderer
 			}
 		}
 
+		__global__ void initialize_z_buffer(float *z_buffer, size_t size, float initial_value)
+		{
+			int idx = blockIdx.x * blockDim.x + threadIdx.x;
+			if (idx >= size) return;
+			z_buffer[idx] = initial_value;
+		}
+
 	}
 
 	Matrix4 viewport(int w, int h)
@@ -155,26 +165,53 @@ namespace renderer
 		return inv_basis * translation;
 	}
 
-	void render(TGAImage &output, Model &model, IShader &shader)
+	void render(TGAImage &output, Model &model, IShader &shader, size_t sizeof_shader)
 	{
+		// initialize z-buffer
 		size_t z_buffer_size = output.get_width() * output.get_height();
-		float* z_buffer;
-		cudaMalloc(&z_buffer, z_buffer_size * sizeof(float));
-		for (int i = 0; i < z_buffer_size; i++) 
-		{
-			z_buffer[i] = -std::numeric_limits<float>::max(); // TODO check if initialization from host works
-		}
+		float *d_z_buffer;
+		cudaMalloc(&d_z_buffer, z_buffer_size * sizeof(float));
 
+		initialize_z_buffer<<<z_buffer_size / NUM_THREADS, NUM_THREADS>>>(d_z_buffer, z_buffer_size, -std::numeric_limits<float>::max());
+
+		// create device pointers for parameters
+		TGAImage *d_output_image;
+		Model *d_model;
+		IShader *d_shader;
+		cudaMalloc(&d_output_image, sizeof(TGAImage));
+		cudaMalloc(&d_model, sizeof(Model));
+		cudaMalloc(&d_shader, sizeof_shader);
+
+		// compute transformation matrices for the shader
 		shader.m_viewport = viewport(output.get_width(), output.get_height());
 		shader.transform = shader.m_viewport * shader.m_projection * shader.m_view;
-		shader.model = &model;
+		shader.model = d_model;
 
-		// TODO cudaMemCopy the parameters to device
+		// copy all parameters to device
+		cudaMemcpy(d_output_image, &output, sizeof(TGAImage), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_model, &model, sizeof(Model), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_shader, &shader, sizeof_shader, cudaMemcpyHostToDevice);
 
+		// make sure z_buffer is initialized
+		cudaDeviceSynchronize(); 
+
+		// render each face!
 		for (int i = 0; i < model.nfaces(); i++)
 		{
-			render_face<<<1, 1>>>(i, output.get_width(), z_buffer, &shader, &output);
+			render_face<<<1, 1>>>(i, output.get_width(), d_z_buffer, d_shader, d_output_image);
 		}
+
+		// make sure faces are rendered
+		cudaDeviceSynchronize(); 
+
+		// copy result back to output image
+		cudaMemcpy(&output, d_output_image, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+
+		// free all the mallocs
+		cudaFree(d_z_buffer);
+		cudaFree(d_output_image);
+		cudaFree(d_model);
+		cudaFree(d_shader);
 	}
 
 }

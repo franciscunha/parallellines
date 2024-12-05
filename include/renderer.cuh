@@ -30,5 +30,5 @@ namespace renderer
     /**
      * @brief Renders model to output image, according to shader's behaviour.
      */
-    void render(TGAImage &output, Model &model, IShader &shader);
+    void render(TGAImage &output, Model &model, IShader &shader, size_t sizeof_shader);
 }
