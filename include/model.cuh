@@ -5,8 +5,8 @@
 #define __MODEL_H__
 
 #include <vector>
-#include "geometry.hpp"
-#include "tgaimage.hpp"
+#include "geometry.cuh"
+#include "tgaimage.cuh"
 
 enum TextureType
 {

@@ -1,4 +1,4 @@
-#include "../include/geometry.hpp"
+#include "../include/geometry.cuh"
 
 Matrix4::Matrix4()
 {

@@ -1,4 +1,4 @@
-#include "../include/line_renderer.hpp"
+#include "../include/line_renderer.cuh"
 
 namespace line_renderer 
 {

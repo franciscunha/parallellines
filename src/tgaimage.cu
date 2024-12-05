@@ -6,7 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include "../include/tgaimage.hpp"
+#include "../include/tgaimage.cuh"
 
 TGAImage::TGAImage() : data(NULL), width(0), height(0), bytespp(0)
 {

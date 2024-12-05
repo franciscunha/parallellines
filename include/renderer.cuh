@@ -1,7 +1,7 @@
 #pragma once
 
-#include "tgaimage.hpp"
-#include "model.hpp"
+#include "tgaimage.cuh"
+#include "model.cuh"
 
 struct IShader
 {

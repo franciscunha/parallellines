@@ -3,9 +3,9 @@
 #include <iostream>
 #include <algorithm>
 
-#include "../include/tgaimage.hpp"
-#include "../include/model.hpp"
-#include "../include/line_renderer.hpp"
+#include "../include/tgaimage.cuh"
+#include "../include/model.cuh"
+#include "../include/line_renderer.cuh"
 
 #include "../include/renderer.cuh"
 #include "../include/shaders.cuh"

@@ -7,7 +7,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include "../include/model.hpp"
+#include "../include/model.cuh"
 
 Model::Model(const char *filename) : normal_map_(), specular_()
 {
