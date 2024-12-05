@@ -1,6 +1,5 @@
 
 #include <limits>
-#include <typeinfo>
 
 #include "../include/renderer.cuh"
 
