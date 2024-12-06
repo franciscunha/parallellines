@@ -200,6 +200,7 @@ namespace renderer
 		// render each face!
 		for (int i = 0; i < model.nfaces(); i++)
 		{
+			// TODO actually parallelize this
 			render_face<<<1, 1>>>(i, output.get_width(), d_z_buffer, d_shader, d_output_image);
 		}
 

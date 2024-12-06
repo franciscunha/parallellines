@@ -2,7 +2,7 @@
 
 #define BLOCK_SIZE 256
 
-namespace line_renderer 
+namespace line_renderer
 {
 	namespace // private functions
 	{
@@ -19,7 +19,7 @@ namespace line_renderer
 			*a = *b;
 			*b = c;
 		}
-	
+
 		__device__ void d_draw(Vec2i p0, Vec2i p1, TGAImage *output, TGAColor color)
 		{
 			int x0 = p0.x, y0 = p0.y;
@@ -55,11 +55,12 @@ namespace line_renderer
 				y = y + slope;
 			}
 		}
-	
+
 		__global__ void wireframe_kernel(Model *model, TGAImage *output, TGAColor color, int nfaces, int width, int height)
 		{
 			int idx = blockIdx.x * blockDim.x + threadIdx.x;
-			if (idx >= nfaces) return;
+			if (idx >= nfaces)
+				return;
 
 			int *face_vertices = model->face(idx);
 
@@ -71,7 +72,6 @@ namespace line_renderer
 			}
 		}
 	}
-
 
 	void draw(Vec2i p0, Vec2i p1, TGAImage &output, TGAColor color)
 	{
@@ -109,29 +109,29 @@ namespace line_renderer
 		}
 	}
 
-	void wireframe(Model &model, TGAImage &output, TGAColor color)
+	void wireframe(Model *model, TGAImage *output, TGAColor color)
 	{
 		// TODO fix
-		int w = output.get_width();
-		int h = output.get_height();
+		int w = output->get_width();
+		int h = output->get_height();
 
 		// create device pointers for parameters
 		TGAImage *d_output_image;
 		Model *d_model;
 		cudaMalloc(&d_output_image, sizeof(TGAImage));
 		cudaMalloc(&d_model, sizeof(Model));
-		cudaMemcpy(d_output_image, &output, sizeof(TGAImage), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_model, &model, sizeof(Model), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_output_image, output, sizeof(TGAImage), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_model, model, sizeof(Model), cudaMemcpyHostToDevice);
 
 		// call kernel
-		size_t num_blocks = std::ceil(model.nfaces() / (float)BLOCK_SIZE);
-		wireframe_kernel<<<num_blocks, BLOCK_SIZE>>>(d_model, d_output_image, color, model.nfaces(), w, h);
+		size_t num_blocks = std::ceil(model->nfaces() / (float)BLOCK_SIZE);
+		wireframe_kernel<<<num_blocks, BLOCK_SIZE>>>(d_model, d_output_image, color, model->nfaces(), w, h);
 
 		// make sure faces are rendered
-		cudaDeviceSynchronize(); 
+		cudaDeviceSynchronize();
 
 		// copy result back to output image
-		cudaMemcpy(&output, d_output_image, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+		cudaMemcpy(output, d_output_image, sizeof(TGAImage), cudaMemcpyDeviceToHost);
 
 		// free the mallocs
 		cudaFree(d_output_image);

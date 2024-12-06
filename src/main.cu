@@ -32,7 +32,7 @@ void lines_demo()
 	TGAImage output(256, 256, TGAImage::RGB);
 	Model model("models/african_head/african_head.obj");
 	
-	line_renderer::wireframe(model, output, TGAColor(255, 255, 255, 255));
+	line_renderer::wireframe(&model, &output, TGAColor(255, 255, 255, 255));
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file("images/out.tga");
