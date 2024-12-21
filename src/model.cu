@@ -81,41 +81,33 @@ Model::Model(const char *filename) : normal_map_(), specular_()
         }
     }
 
-    nverts_ = verts.size();
+    n_verts_ = verts.size();
+    n_uvs_ = uvs.size();
+    n_normals_ = normals.size();
 
-    verts_ = new Vec3f[verts.size()];
-    std::copy(verts.begin(), verts.end(), verts_);
+    vectors_ = new Vec3f[n_verts_ + n_uvs_ + n_normals_];
+    std::copy(verts.begin(), verts.end(), vectors_);
+    std::copy(uvs.begin(), uvs.end(), vectors_ + n_verts_);
+    std::copy(normals.begin(), normals.end(), vectors_ + n_verts_ + n_uvs_);
 
-    uvs_ = new Vec2f[uvs.size()];
-    std::copy(uvs.begin(), uvs.end(), uvs_);
+    n_faces_ = faces.size();
 
-    normals_ = new Vec3f[normals.size()];
-    std::copy(normals.begin(), normals.end(), normals_);
-
-    nfaces_ = faces.size();
-
-    faces_ = new int[nfaces_ * 3];
-    faces_uvs_ = new int[nfaces_ * 3];
-    faces_normals_ = new int[nfaces_ * 3];
-    for (int i = 0; i < nfaces_; i++)
+    indexes_ = new int[n_faces_ * 9];
+    for (int i = 0; i < n_faces_; i++)
     {
         for (int j = 0; j < 3; j++)
         {
-            faces_[i * 3 + j] = faces[i][j];
-            faces_uvs_[i * 3 + j] = faces_uvs[i][j];
-            faces_normals_[i * 3 + j] = faces_normals[i][j];
+            indexes_[(0 * 3 * n_faces_) + (i * 3 + j)] = faces[i][j];
+            indexes_[(1 * 3 * n_faces_) + (i * 3 + j)] = faces_uvs[i][j];
+            indexes_[(2 * 3 * n_faces_) + (i * 3 + j)] = faces_normals[i][j];
         }
     }
 }
 
 Model::~Model()
 {
-    delete[] verts_;
-    delete[] uvs_;
-    delete[] normals_;
-    delete[] faces_;
-    delete[] faces_uvs_;
-    delete[] faces_normals_;
+    delete[] indexes_;
+    delete[] vectors_;
 }
 
 __host__ __device__ TGAImage *Model::texture_of_type(TextureType type)

@@ -18,16 +18,23 @@ enum TextureType
 class Model
 {
 private:
-	int nverts_;
-	int nfaces_;
+	int n_verts_;
+	int n_uvs_;
+	int n_normals_;
+	int n_faces_;
 
-	Vec3f *verts_;
-	Vec2f *uvs_;
-	Vec3f *normals_;
+	
+	// all vectors are packed into a single array to make memory management easier
+	// 0 to n_verts-1 -> verts
+	// n_verts to n_verts+n_uvs-1 -> uvs
+	// n_verts+n_uvs to n_verts+n_uvs+n_normals-1 -> normals 
+	Vec3f *vectors_;
 
-	int *faces_;
-	int *faces_uvs_;
-	int *faces_normals_;
+	// all indexes are packed into a single array to make memory management easier
+	// 0 to 3*n_faces-1 -> face indexes
+	// 3*n_faces to 6*n_faces-1 -> uv indexes
+	// 6*n_faces to 9*n_faces-1 -> normal indexes
+	int *indexes_;
 
 	TGAImage diffuse_;
 	TGAImage normal_map_;
@@ -39,16 +46,16 @@ public:
 	Model(const char *filename);
 	~Model();
 	
-	__host__ __device__ int Model::nverts() { return nverts_; }
-	__host__ __device__ int Model::nfaces() { return nfaces_; }
+	__host__ __device__ int Model::nverts() { return n_verts_; }
+	__host__ __device__ int Model::nfaces() { return n_faces_; }
 	
-	__host__ __device__ int *Model::face(int idx) { return &faces_[idx * 3]; }
-	__host__ __device__ int *Model::face_uvs(int idx) { return &faces_uvs_[idx * 3]; }
-	__host__ __device__ int *Model::face_normals(int idx) { return &faces_normals_[idx * 3]; }
+	__host__ __device__ int *Model::face(int idx) { return &indexes_[idx * 3]; }
+	__host__ __device__ int *Model::face_uvs(int idx) { return &indexes_[3 * n_faces_ + (idx * 3)]; }
+	__host__ __device__ int *Model::face_normals(int idx) { return &indexes_[6 * n_faces_ + (idx * 3)]; }
 	
-	__host__ __device__ Vec3f Model::vert(int i) { return verts_[i]; }
-	__host__ __device__ Vec2f Model::uv(int i) { return uvs_[i]; }
-	__host__ __device__ Vec3f Model::normal(int i) { return normals_[i]; }
+	__host__ __device__ Vec3f Model::vert(int i) { return vectors_[i]; }
+	__host__ __device__ Vec2f Model::uv(int i) { return Vec2f(vectors_[i + n_verts_].x, vectors_[i + n_verts_].y); }
+	__host__ __device__ Vec3f Model::normal(int i) { return vectors_[i + n_verts_ + n_uvs_]; }
 
 	void load_texture(const char *filename, TextureType type);
 	__host__ __device__ TGAColor sample_texture(Vec2f uv, TextureType type);
