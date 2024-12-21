@@ -58,17 +58,25 @@ namespace line_renderer
 
 		__global__ void wireframe_kernel(Model *model, TGAImage *output, TGAColor color, int nfaces, int width, int height)
 		{
+			printf("hello?\n");
 			int idx = blockIdx.x * blockDim.x + threadIdx.x;
 			if (idx >= nfaces)
 				return;
+			printf("hello!\n");
 
-			int *face_vertices = model->face(idx);
+			int *face_vertices = model->face(idx); 
+			// TODO 
+			// the issue is that this address is still an address in the host ie only a shallow copy of Model is done by cudaMemcpy
+			// FIX: find a way to do a deep copy
+
+			printf("face_vertices address: %p\n", face_vertices);
+			printf("vertices = %d %d %d\n", face_vertices[0], face_vertices[1], face_vertices[2]);
 
 			for (int j = 0; j < 3; j++)
 			{
 				Vec2i vertex0 = world_to_screen_coords(model->vert(face_vertices[j]), width, height);
 				Vec2i vertex1 = world_to_screen_coords(model->vert(face_vertices[(j + 1) % 3]), width, height);
-				d_draw(vertex0, vertex1, output, color);
+				// d_draw(vertex0, vertex1, output, color);
 			}
 		}
 	}
@@ -112,20 +120,20 @@ namespace line_renderer
 	void wireframe(Model *model, TGAImage *output, TGAColor color)
 	{
 		// TODO fix
+
 		int w = output->get_width();
 		int h = output->get_height();
 
 		// create device pointers for parameters
 		TGAImage *d_output_image;
-		Model *d_model;
 		cudaMalloc(&d_output_image, sizeof(TGAImage));
-		cudaMalloc(&d_model, sizeof(Model));
 		cudaMemcpy(d_output_image, output, sizeof(TGAImage), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_model, model, sizeof(Model), cudaMemcpyHostToDevice);
-
+		
+		Model *d_model = model->cudaDeepCopyToDevice();
+		
 		// call kernel
 		size_t num_blocks = std::ceil(model->nfaces() / (float)BLOCK_SIZE);
-		wireframe_kernel<<<num_blocks, BLOCK_SIZE>>>(d_model, d_output_image, color, model->nfaces(), w, h);
+		wireframe_kernel<<<1, 1>>>(d_model, d_output_image, color, model->nfaces(), w, h);
 
 		// make sure faces are rendered
 		cudaDeviceSynchronize();
@@ -135,6 +143,6 @@ namespace line_renderer
 
 		// free the mallocs
 		cudaFree(d_output_image);
-		cudaFree(d_model);
+		Model::cudaDeepFree(d_model);
 	}
 }

@@ -110,6 +110,52 @@ Model::~Model()
     delete[] vectors_;
 }
 
+Model *Model::cudaDeepCopyToDevice()
+{
+    // make device copies of the arrays in this
+    
+    int *d_indexes;
+    Vec3f *d_vectors;
+
+    int size_indexes = (n_faces_ * 9) * sizeof(int);
+    int size_vectors = (n_verts_ + n_uvs_ + n_normals_) * sizeof(Vec3f);
+
+    cudaMalloc(&d_indexes, size_indexes);
+    cudaMalloc(&d_vectors, size_vectors);
+
+    cudaMemcpy(d_indexes, indexes_, size_indexes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vectors, vectors_, size_vectors, cudaMemcpyHostToDevice);
+
+    // temporarily make this point to the device arrays s.t. device model points to them
+
+    int *indexes = indexes_;
+    Vec3f *vectors = vectors_;
+
+    indexes_ = d_indexes;
+    vectors_ = d_vectors;
+
+    // copy this to device
+    
+    Model *d_model;
+    cudaMalloc(&d_model, sizeof(Model));
+    cudaMemcpy(d_model, this, sizeof(Model), cudaMemcpyHostToDevice);
+
+    // reset the host model pointers to the host arrays
+    
+    indexes_ = indexes;
+    vectors_ = vectors;
+
+    // return pointer to device model 
+    return d_model;
+}
+
+void Model::cudaDeepFree(Model *ptr)
+{
+    cudaFree(ptr->indexes_);
+    cudaFree(ptr->vectors_);
+    cudaFree(ptr);
+}
+
 __host__ __device__ TGAImage *Model::texture_of_type(TextureType type)
 {
     switch (type)
