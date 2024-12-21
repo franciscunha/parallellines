@@ -1,6 +1,5 @@
 #include "../include/line_renderer.cuh"
-
-#define BLOCK_SIZE 256
+#include "../include/thread_count.cuh"
 
 namespace line_renderer
 {
@@ -120,8 +119,9 @@ namespace line_renderer
 		Model *d_model = model->cudaDeepCopyToDevice();
 		
 		// call kernel
-		size_t num_blocks = std::ceil(model->nfaces() / (float)BLOCK_SIZE);
-		wireframe_kernel<<<num_blocks, BLOCK_SIZE>>>(d_model, d_output_image, color, model->nfaces(), w, h);
+		size_t num_blocks, threads_per_block;
+		calculate_kernel_size(model->nfaces(), &num_blocks, &threads_per_block);
+		wireframe_kernel<<<num_blocks, threads_per_block>>>(d_model, d_output_image, color, model->nfaces(), w, h);
 
 		// make sure faces are rendered
 		cudaDeviceSynchronize();
