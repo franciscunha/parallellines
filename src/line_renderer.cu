@@ -71,15 +71,6 @@ namespace line_renderer
 				d_draw(vertex0, vertex1, output, color);
 			}
 
-			// for (int i = 0; i < width; i++) 
-			// {
-			// 	for (int j = 0; j < height; j++)
-			// 	{
-			// 		output->set(i, j, color);
-			// 	}
-			// }
-			// printf("img[0] in device: %d\n", (output->buffer())[0]);
-
 		}
 	}
 
@@ -121,8 +112,6 @@ namespace line_renderer
 
 	void wireframe(Model *model, TGAImage *output, TGAColor color)
 	{		
-		// TODO fix
-
 		int w = output->get_width();
 		int h = output->get_height();
 
@@ -132,16 +121,15 @@ namespace line_renderer
 		
 		// call kernel
 		size_t num_blocks = std::ceil(model->nfaces() / (float)BLOCK_SIZE);
-		wireframe_kernel<<<1, 1>>>(d_model, d_output_image, color, model->nfaces(), w, h);
+		wireframe_kernel<<<num_blocks, BLOCK_SIZE>>>(d_model, d_output_image, color, model->nfaces(), w, h);
 
 		// make sure faces are rendered
 		cudaDeviceSynchronize();
 
 		// copy result back to output image
 		output->cudaDeepCopyFromDevice(*d_output_image);
-		// printf("img[0] in host: %d\n", (output->buffer())[0]);
 
-		// free the mallocs
+		// free device memory
 		TGAImage::cudaDeepFree(d_output_image);
 		Model::cudaDeepFree(d_model);
 	}
