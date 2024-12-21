@@ -23,7 +23,7 @@ Model::Model(const char *filename) : normal_map_(), specular_()
     std::vector<std::vector<int>> faces_uvs;
     std::vector<std::vector<int>> faces_normals;
     std::vector<Vec3f> verts;
-    std::vector<Vec2f> uvs;
+    std::vector<Vec3f> uvs;
     std::vector<Vec3f> normals;
 
     std::string line;
@@ -44,7 +44,8 @@ Model::Model(const char *filename) : normal_map_(), specular_()
         else if (!line.compare(0, 3, "vt "))
         {
             iss >> trash >> trash;
-            Vec2f vt;
+            Vec3f vt;
+            vt.raw[2] = 0;
             for (int i = 0; i < 2; i++)
                 iss >> vt.raw[i];
             uvs.push_back(vt);
