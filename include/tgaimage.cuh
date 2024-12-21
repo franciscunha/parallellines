@@ -1,5 +1,5 @@
-// This file is written by Dmitry V. Sokolov (https://github.com/ssloy) and provided
-// as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
+// This file is forked from an initial version by Dmitry V. Sokolov (https://github.com/ssloy) that was
+// provided as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
 
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
@@ -84,6 +84,9 @@ public:
 	TGAImage();
 	TGAImage(int w, int h, int bpp);
 	TGAImage(const TGAImage &img);
+	TGAImage *cudaDeepCopyToDevice();
+	void cudaDeepCopyFromDevice(const TGAImage &device_img);
+	static void cudaDeepFree(TGAImage *device_ptr);
 	bool read_tga_file(const char *filename);
 	bool write_tga_file(const char *filename, bool rle=true);
 	bool write_tga_file(std::string filename, bool rle=true);
@@ -97,7 +100,7 @@ public:
 	__host__ __device__ int get_width();
 	__host__ __device__ int get_height();
 	int get_bytespp();
-	unsigned char *buffer();
+	__host__ __device__ unsigned char *buffer();
 	void clear();
 };
 

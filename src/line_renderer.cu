@@ -58,26 +58,28 @@ namespace line_renderer
 
 		__global__ void wireframe_kernel(Model *model, TGAImage *output, TGAColor color, int nfaces, int width, int height)
 		{
-			printf("hello?\n");
 			int idx = blockIdx.x * blockDim.x + threadIdx.x;
 			if (idx >= nfaces)
 				return;
-			printf("hello!\n");
 
 			int *face_vertices = model->face(idx); 
-			// TODO 
-			// the issue is that this address is still an address in the host ie only a shallow copy of Model is done by cudaMemcpy
-			// FIX: find a way to do a deep copy
-
-			printf("face_vertices address: %p\n", face_vertices);
-			printf("vertices = %d %d %d\n", face_vertices[0], face_vertices[1], face_vertices[2]);
 
 			for (int j = 0; j < 3; j++)
 			{
 				Vec2i vertex0 = world_to_screen_coords(model->vert(face_vertices[j]), width, height);
 				Vec2i vertex1 = world_to_screen_coords(model->vert(face_vertices[(j + 1) % 3]), width, height);
-				// d_draw(vertex0, vertex1, output, color);
+				d_draw(vertex0, vertex1, output, color);
 			}
+
+			// for (int i = 0; i < width; i++) 
+			// {
+			// 	for (int j = 0; j < height; j++)
+			// 	{
+			// 		output->set(i, j, color);
+			// 	}
+			// }
+			// printf("img[0] in device: %d\n", (output->buffer())[0]);
+
 		}
 	}
 
@@ -118,17 +120,14 @@ namespace line_renderer
 	}
 
 	void wireframe(Model *model, TGAImage *output, TGAColor color)
-	{
+	{		
 		// TODO fix
 
 		int w = output->get_width();
 		int h = output->get_height();
 
 		// create device pointers for parameters
-		TGAImage *d_output_image;
-		cudaMalloc(&d_output_image, sizeof(TGAImage));
-		cudaMemcpy(d_output_image, output, sizeof(TGAImage), cudaMemcpyHostToDevice);
-		
+		TGAImage *d_output_image = output->cudaDeepCopyToDevice();
 		Model *d_model = model->cudaDeepCopyToDevice();
 		
 		// call kernel
@@ -139,10 +138,11 @@ namespace line_renderer
 		cudaDeviceSynchronize();
 
 		// copy result back to output image
-		cudaMemcpy(output, d_output_image, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+		output->cudaDeepCopyFromDevice(*d_output_image);
+		// printf("img[0] in host: %d\n", (output->buffer())[0]);
 
 		// free the mallocs
-		cudaFree(d_output_image);
+		TGAImage::cudaDeepFree(d_output_image);
 		Model::cudaDeepFree(d_model);
 	}
 }

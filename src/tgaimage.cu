@@ -1,5 +1,5 @@
-// This file is written by Dmitry V. Sokolov (https://github.com/ssloy) and provided
-// as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
+// This file is forked from an initial version by Dmitry V. Sokolov (https://github.com/ssloy) that was
+// provided as a starting point for the tinyrenderer course (https://github.com/ssloy/tinyrenderer)
 
 #include <iostream>
 #include <fstream>
@@ -33,6 +33,57 @@ TGAImage::~TGAImage()
 {
 	if (data)
 		delete[] data;
+}
+
+TGAImage *TGAImage::cudaDeepCopyToDevice()
+{
+	// make device copy of the data in this
+	unsigned long nbytes = width * height * bytespp;
+	unsigned char *d_data;
+	cudaMalloc(&d_data, nbytes);
+	cudaMemcpy(d_data, data, nbytes, cudaMemcpyHostToDevice);
+
+	// temporarily make this point to the device data s.t. device image points to them
+	unsigned char *data_ptr_copy = data;
+	data = d_data;
+	
+	// copy this to device
+	TGAImage *d_img;
+	cudaMalloc(&d_img, sizeof(TGAImage));
+	cudaMemcpy(d_img, this, sizeof(TGAImage), cudaMemcpyHostToDevice);
+
+	// reset the host image pointers to the host data
+	data = data_ptr_copy;
+
+	// return pointer to device image
+	return d_img;
+}
+
+
+void TGAImage::cudaDeepCopyFromDevice(const TGAImage &device_img)
+{
+	// delete allocated memory, we'll overwrite the address here
+	if (data)
+		delete[] data;
+
+	// initial copy of device img
+	cudaMemcpy(this, &device_img, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+	
+	// save address of device data array
+	unsigned char *device_data = data;
+	
+	// reinitialize host data array
+	unsigned long nbytes = width * height * bytespp;
+	data = new unsigned char[nbytes];
+	
+	// copy device data array to host data array
+	cudaMemcpy(data, device_data, nbytes, cudaMemcpyDeviceToHost);	
+}
+
+void TGAImage::cudaDeepFree(TGAImage *device_ptr)
+{
+	cudaFree(device_ptr->data);
+	cudaFree(device_ptr);
 }
 
 TGAImage &TGAImage::operator=(const TGAImage &img)
@@ -381,7 +432,7 @@ bool TGAImage::flip_vertically()
 	return true;
 }
 
-unsigned char *TGAImage::buffer()
+__host__ __device__ unsigned char *TGAImage::buffer()
 {
 	return data;
 }
