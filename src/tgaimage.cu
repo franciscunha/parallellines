@@ -82,7 +82,13 @@ void TGAImage::cudaDeepCopyFromDevice(const TGAImage &device_img)
 
 void TGAImage::cudaDeepFree(TGAImage *device_ptr)
 {
-	cudaFree(device_ptr->data);
+    // copy device data to host so we can access the inner address
+    TGAImage *img = (TGAImage*)malloc(sizeof(TGAImage));
+    cudaMemcpy(img, device_ptr, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+    
+    // free everything
+	cudaFree(img->data);
+	free(img);
 	cudaFree(device_ptr);
 }
 

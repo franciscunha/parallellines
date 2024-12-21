@@ -152,8 +152,14 @@ Model *Model::cudaDeepCopyToDevice()
 
 void Model::cudaDeepFree(Model *device_ptr)
 {
-    cudaFree(device_ptr->indexes_);
-    cudaFree(device_ptr->vectors_);
+    // copy device data to host so we can access the inner addresses
+    Model *m = (Model*)malloc(sizeof(Model));
+    cudaMemcpy(m, device_ptr, sizeof(Model), cudaMemcpyDeviceToHost);
+    
+    // free everything
+    cudaFree(m->indexes_);
+    cudaFree(m->vectors_);
+    free(m);
     cudaFree(device_ptr);
 }
 
