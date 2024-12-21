@@ -47,7 +47,7 @@ public:
 	~Model();
 
 	Model *cudaDeepCopyToDevice();
-	static void cudaDeepFree(Model *ptr);
+	static void cudaDeepFree(Model *device_ptr);
 
 	__host__ __device__ int nverts() { return n_verts_; }
 	__host__ __device__ int nfaces() { return n_faces_; }

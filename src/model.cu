@@ -150,11 +150,11 @@ Model *Model::cudaDeepCopyToDevice()
     return d_model;
 }
 
-void Model::cudaDeepFree(Model *ptr)
+void Model::cudaDeepFree(Model *device_ptr)
 {
-    cudaFree(ptr->indexes_);
-    cudaFree(ptr->vectors_);
-    cudaFree(ptr);
+    cudaFree(device_ptr->indexes_);
+    cudaFree(device_ptr->vectors_);
+    cudaFree(device_ptr);
 }
 
 __host__ __device__ TGAImage *Model::texture_of_type(TextureType type)
