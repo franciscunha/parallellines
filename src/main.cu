@@ -20,8 +20,7 @@ void renderer_demo()
 	model.load_texture("models/african_head/african_head_spec.tga", TextureType::SPECULAR);
 	model.load_texture("models/african_head/african_head_nm.tga", TextureType::NORMAL_MAP);
 
-	PhongShader shader = PhongShader();
-	renderer::render(output, model, shader, sizeof(PhongShader));
+	renderer::render<PhongShader>(output, model);
 
 	output.flip_vertically(); // so the origin is left bottom corner
 	output.write_tga_file("images/out.tga");

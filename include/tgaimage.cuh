@@ -53,7 +53,7 @@ struct TGAColor {
 		}
 	}
 
-	TGAColor & operator =(const TGAColor &c) {
+	__host__ __device__ TGAColor & operator =(const TGAColor &c) {
 		if (this != &c) {
 			bytespp = c.bytespp;
 			val = c.val;
@@ -61,7 +61,7 @@ struct TGAColor {
 		return *this;
 	}
 
-	TGAColor operator *(float x) const {
+	__host__ __device__ TGAColor operator *(float x) const {
 		return TGAColor(this->r * x, this->g * x, this->b * x, this->a);
 	};
 };
