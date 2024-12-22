@@ -1,35 +1,37 @@
 #include "../include/geometry.cuh"
 
-Matrix4::Matrix4()
+__host__ __device__ Matrix4::Matrix4()
 {
-    m = {
-        std::array<float, 4>{1.0f, 0.0f, 0.0f, 0.0f},
-        std::array<float, 4>{0.0f, 1.0f, 0.0f, 0.0f},
-        std::array<float, 4>{0.0f, 0.0f, 1.0f, 0.0f},
-        std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}};
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            raw[i * 4 + j] = i == j ? 1.0f : 0.0f;
+        }
+    }
 }
 
-Matrix4 Matrix4::identity()
+__host__ __device__ Matrix4 Matrix4::identity()
 {
     return Matrix4();
 }
 
-Matrix4 Matrix4::transpose()
+__host__ __device__ Matrix4 Matrix4::transpose()
 {
     Matrix4 t;
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 4; j++)
         {
-            t.m[i][j] = m[j][i];
+            t.raw[i * 4 + j] = raw[j * 4 + i];
         }
     }
     return t;
 }
 
-float Matrix4::cofactor(int i_, int j_)
+__host__ __device__ float Matrix4::cofactor(int i_, int j_)
 {
-    std::array<std::array<float, 3>, 3> submatrix;
+    float submatrix[9];
 
     int sub_i = 0;
     for (int i = 0; i < 4; i++)
@@ -43,7 +45,7 @@ float Matrix4::cofactor(int i_, int j_)
             if (j == j_)
                 continue;
 
-            submatrix[sub_i][sub_j] = m[i][j];
+            submatrix[sub_i * 3 + sub_j] = raw[i * 4 + j];
             sub_j++;
         }
         sub_i++;
@@ -55,7 +57,7 @@ float Matrix4::cofactor(int i_, int j_)
     return neg * det;
 }
 
-bool Matrix4::inverse(Matrix4 &inverse)
+__host__ __device__ bool Matrix4::inverse(Matrix4 &inverse)
 {
     // pre-compute cofactors
     float cofactors[4][4];
@@ -71,9 +73,9 @@ bool Matrix4::inverse(Matrix4 &inverse)
     float det = 0.0f;
     for (int j = 0; j < 4; j++)
     {
-        det += m[0][j] * cofactors[0][j];
+        det += raw[/* 0 * 4 + */ j] * cofactors[0][j];
     }
-    if (std::abs(det) < std::numeric_limits<float>::epsilon())
+    if (std::abs(det) < 1e-6)
     {
         // det == 0 -> non-invertible matrix
         return false;
@@ -94,19 +96,19 @@ bool Matrix4::inverse(Matrix4 &inverse)
     {
         for (int j = 0; j < 4; j++)
         {
-            inverse.m[i][j] = inv_det * adj[i][j];
+            inverse.raw[i * 4 + j] = inv_det * adj[i][j];
         }
     }
 
     return true;
 }
 
-Vec3f Matrix4::mult(Vec3f &v, bool is_point)
+__host__ __device__ Vec3f Matrix4::mult(Vec3f &v, bool is_point)
 {
     return (*this * v.homogenize(is_point)).dehomogenize();
 }
 
-Matrix4 Matrix4::operator*(const Matrix4 &rhs)
+__host__ __device__ Matrix4 Matrix4::operator*(const Matrix4 &rhs)
 {
     Matrix4 result = Matrix4();
     const Matrix4 &lhs = *this; // alias for clarity
@@ -116,11 +118,11 @@ Matrix4 Matrix4::operator*(const Matrix4 &rhs)
         for (int j = 0; j < 4; j++)
         {
 
-            result.m[i][j] = 0;
+            result.raw[i * 4 + j] = 0;
 
             for (int k = 0; k < 4; k++)
             {
-                result.m[i][j] += lhs.m[i][k] * rhs.m[k][j];
+                result.raw[i * 4 + j] += lhs.raw[i * 4 + k] * rhs.raw[k * 4 + j];
             }
         }
     }
@@ -128,14 +130,14 @@ Matrix4 Matrix4::operator*(const Matrix4 &rhs)
     return result;
 }
 
-Vec4f Matrix4::operator*(const Vec4f &v)
+__host__ __device__ Vec4f Matrix4::operator*(const Vec4f &v)
 {
     Vec4f result = Vec4f(0, 0, 0, 0);
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 4; j++)
         {
-            result.raw[i] += v.raw[j] * m[i][j];
+            result.raw[i] += v.raw[j] * raw[i * 4 + j];
         }
     }
     return result;
@@ -143,50 +145,53 @@ Vec4f Matrix4::operator*(const Vec4f &v)
 
 std::ostream &operator<<(std::ostream &s, Matrix4 &m)
 {
-    s << "|" << m.m[0][0] << ", " << m.m[0][1] << ", " << m.m[0][2] << ", " << m.m[0][3] << "|" << std::endl;
-    s << "|" << m.m[1][0] << ", " << m.m[1][1] << ", " << m.m[1][2] << ", " << m.m[1][3] << "|" << std::endl;
-    s << "|" << m.m[2][0] << ", " << m.m[2][1] << ", " << m.m[2][2] << ", " << m.m[2][3] << "|" << std::endl;
-    s << "|" << m.m[3][0] << ", " << m.m[3][1] << ", " << m.m[3][2] << ", " << m.m[3][3] << "|" << std::endl;
+    s << "|" << m.get(0, 0) << ", " << m.get(0, 1) << ", " << m.get(0, 2) << ", " << m.get(0, 3) << "|" << std::endl;
+    s << "|" << m.get(1, 0) << ", " << m.get(1, 1) << ", " << m.get(1, 2) << ", " << m.get(1, 3) << "|" << std::endl;
+    s << "|" << m.get(2, 0) << ", " << m.get(2, 1) << ", " << m.get(2, 2) << ", " << m.get(2, 3) << "|" << std::endl;
+    s << "|" << m.get(3, 0) << ", " << m.get(3, 1) << ", " << m.get(3, 2) << ", " << m.get(3, 3) << "|" << std::endl;
     return s;
 }
 
-Matrix3::Matrix3()
+__host__ __device__ Matrix3::Matrix3()
 {
-    m = {
-        std::array<float, 3>{1.0f, 0.0f, 0.0f},
-        std::array<float, 3>{0.0f, 1.0f, 0.0f},
-        std::array<float, 3>{0.0f, 0.0f, 1.0f}};
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            raw[i * 3 + j] = i == j ? 1.0f : 0.0f;
+        }
+    }
 }
 
-Matrix3 Matrix3::identity()
+__host__ __device__ Matrix3 Matrix3::identity()
 {
     return Matrix3();
 }
 
-float Matrix3::determinant(std::array<std::array<float, 3>, 3> &m)
+__host__ __device__ float Matrix3::determinant(float *m)
 {
-    return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+    return m[0 * 3 + 0] * (m[1 * 3 + 1] * m[2 * 3 + 2] - m[1 * 3 + 2] * m[2 * 3 + 1]) - m[0 * 3 + 1] * (m[1 * 3 + 0] * m[2 * 3 + 2] - m[1 * 3 + 2] * m[2 * 3 + 0]) + m[0 * 3 + 2] * (m[1 * 3 + 0] * m[2 * 3 + 1] - m[1 * 3 + 1] * m[2 * 3 + 0]);
 }
 
-float Matrix3::determinant()
+__host__ __device__ float Matrix3::determinant()
 {
-    return Matrix3::determinant(m);
+    return Matrix3::determinant(raw);
 }
 
-Matrix4 Matrix3::homogenize()
+__host__ __device__ Matrix4 Matrix3::homogenize()
 {
     Matrix4 m4 = Matrix4();
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
         {
-            m4.m[i][j] = m[i][j];
+            m4.raw[i * 4 + j] = raw[i * 3 + j];
         }
     }
     return m4;
 }
 
-Matrix3 Matrix3::operator*(const Matrix3 &rhs)
+__host__ __device__ Matrix3 Matrix3::operator*(const Matrix3 &rhs)
 {
     Matrix3 result = Matrix3();
     const Matrix3 &lhs = *this; // alias for clarity
@@ -196,11 +201,11 @@ Matrix3 Matrix3::operator*(const Matrix3 &rhs)
         for (int j = 0; j < 3; j++)
         {
 
-            result.m[i][j] = 0;
+            result.raw[i * 3 + j] = 0;
 
             for (int k = 0; k < 3; k++)
             {
-                result.m[i][j] += lhs.m[i][k] * rhs.m[k][j];
+                result.raw[i * 3 + j] += lhs.raw[i * 3 + k] * rhs.raw[k * 3 + j];
             }
         }
     }
@@ -208,14 +213,14 @@ Matrix3 Matrix3::operator*(const Matrix3 &rhs)
     return result;
 }
 
-Vec3f Matrix3::operator*(const Vec3f &v)
+__host__ __device__ Vec3f Matrix3::operator*(const Vec3f &v)
 {
     Vec3f result = Vec3f(0, 0, 0);
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
         {
-            result.raw[i] += v.raw[j] * m[i][j];
+            result.raw[i] += v.raw[j] * raw[i * 3 + j];
         }
     }
     return result;
@@ -223,8 +228,8 @@ Vec3f Matrix3::operator*(const Vec3f &v)
 
 std::ostream &operator<<(std::ostream &s, Matrix3 &m)
 {
-    s << "|" << m.m[0][0] << ", " << m.m[0][1] << ", " << m.m[0][2] << "|" << std::endl;
-    s << "|" << m.m[1][0] << ", " << m.m[1][1] << ", " << m.m[1][2] << "|" << std::endl;
-    s << "|" << m.m[2][0] << ", " << m.m[2][1] << ", " << m.m[2][2] << "|" << std::endl;
+    s << "|" << m.get(0, 0) << ", " << m.get(0, 1) << ", " << m.get(0, 2) << "|" << std::endl;
+    s << "|" << m.get(1, 0) << ", " << m.get(1, 1) << ", " << m.get(1, 2) << "|" << std::endl;
+    s << "|" << m.get(2, 0) << ", " << m.get(2, 1) << ", " << m.get(2, 2) << "|" << std::endl;
     return s;
 }

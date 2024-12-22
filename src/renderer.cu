@@ -129,13 +129,13 @@ namespace renderer
 		Matrix4 m;
 		constexpr int Z_DEPTH = 255;
 		// scaling part
-		m.m[0][0] = (w / 2.0f);
-		m.m[1][1] = (h / 2.0f);
-		m.m[2][2] = (Z_DEPTH / 2.0f);
+		m.raw[0 * 4 + 0] = (w / 2.0f);
+		m.raw[1 * 4 + 1] = (h / 2.0f);
+		m.raw[2 * 4 + 2] = (Z_DEPTH / 2.0f);
 		// translating part
 		for (int i = 0; i < 3; i++)
 		{
-			m.m[i][3] = m.m[i][i];
+			m.raw[i * 4 + 3] = m.raw[i * 4 + i];
 		}
 
 		return m;
@@ -144,7 +144,7 @@ namespace renderer
 	Matrix4 projection(float c)
 	{
 		Matrix4 m;
-		m.m[3][2] = -(1 / c);
+		m.raw[3 * 4 + 2] = -(1.0f / c);
 		return m;
 	}
 
@@ -159,11 +159,11 @@ namespace renderer
 
 		for (int i = 0; i < 3; i++)
 		{
-			translation.m[i][3] = -eye.raw[i];
+			translation.raw[i * 4 + 3] = -eye.raw[i];
 
-			inv_basis.m[0][i] = x.raw[i];
-			inv_basis.m[1][i] = y.raw[i];
-			inv_basis.m[2][i] = z.raw[i];
+			inv_basis.raw[0 * 4 + i] = x.raw[i];
+			inv_basis.raw[1 * 4 + i] = y.raw[i];
+			inv_basis.raw[2 * 4 + i] = z.raw[i];
 		}
 
 		return inv_basis * translation;

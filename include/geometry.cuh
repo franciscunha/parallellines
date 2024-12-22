@@ -68,13 +68,13 @@ struct Vec3
 	__host__ __device__ inline t dot(const Vec3<t> &v) const { return x * v.x + y * v.y + z * v.z; }
 	__host__ __device__ inline Vec3<t> cross(const Vec3<t> &v) const { return Vec3<t>(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x); }
 
-	float norm() const { return std::sqrt(x * x + y * y + z * z); }
-	Vec3<t> &normalize(t l = 1)
+	__host__ __device__ inline float norm() const { return std::sqrt(x * x + y * y + z * z); }
+	__host__ __device__  Vec3<t> &normalize(t l = 1)
 	{
 		*this = (*this) * (l / norm());
 		return *this;
 	}
-	Vec4<t> homogenize(bool is_point = true) { return Vec4<t>(x, y, z, is_point ? 1 : 0); }
+	__host__ __device__ Vec4<t> homogenize(bool is_point = true) { return Vec4<t>(x, y, z, is_point ? 1 : 0); }
 	__host__ __device__ static Vec3<t> from_tgacolor(TGAColor c) { return Vec3<t>(c.r, c.g, c.b); }
 
 	template <class>
@@ -145,38 +145,43 @@ std::ostream &operator<<(std::ostream &s, Vec4<t> &v)
 class Matrix4
 {
 private:
-	float cofactor(int i, int j);
+	__host__ __device__ float cofactor(int i, int j);
 
 public:
-	std::array<std::array<float, 4>, 4> m;
+	float raw[16];
 
-	Matrix4();
-	static Matrix4 identity();
+	__host__ __device__ Matrix4();
+	__host__ __device__ static Matrix4 identity();
 
-	Matrix4 transpose();
-	bool inverse(Matrix4 &inverse);
+	__host__ __device__ inline float get(int i, int j) { return raw[i * 4 + j]; }
 
-	Vec3f mult(Vec3f &v, bool is_point = true);
-	Matrix4 operator*(const Matrix4 &a);
-	Vec4f operator*(const Vec4f &v);
+	__host__ __device__ Matrix4 transpose();
+	__host__ __device__ bool inverse(Matrix4 &inverse);
+
+	__host__ __device__ Vec3f mult(Vec3f &v, bool is_point = true);
+	__host__ __device__ Matrix4 operator*(const Matrix4 &a);
+	__host__ __device__ Vec4f operator*(const Vec4f &v);
 
 	friend std::ostream &operator<<(std::ostream &s, Matrix4 &m);
 };
 
 class Matrix3
 {
+private:
+	float raw[9];
+
 public:
-	std::array<std::array<float, 3>, 3> m;
+	__host__ __device__ Matrix3();
+	__host__ __device__ static Matrix3 identity();
 
-	Matrix3();
-	static Matrix3 identity();
+	__host__ __device__ inline float get(int i, int j) { return raw[i * 3 + j]; }
 
-	static float determinant(std::array<std::array<float, 3>, 3> &m);
-	float determinant();
-	Matrix4 homogenize();
+	__host__ __device__ static float determinant(float *m);
+	__host__ __device__ float determinant();
+	__host__ __device__ Matrix4 homogenize();
 
-	Matrix3 operator*(const Matrix3 &a);
-	Vec3f operator*(const Vec3f &v);
+	__host__ __device__ Matrix3 operator*(const Matrix3 &a);
+	__host__ __device__ Vec3f operator*(const Vec3f &v);
 
 	friend std::ostream &operator<<(std::ostream &s, Matrix3 &m);
 };
