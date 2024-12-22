@@ -39,7 +39,7 @@ void lines_demo()
 
 int main(int argc, char **argv)
 {
-	renderer_demo();
+	lines_demo();
 
 	return 0;
 }
