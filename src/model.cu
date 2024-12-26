@@ -9,7 +9,7 @@
 #include <algorithm>
 #include "../include/model.cuh"
 
-Model::Model(const char *filename) : normal_map_(), specular_()
+Model::Model(const char *filename)
 {
     std::ifstream in;
     in.open(filename, std::ifstream::in);
@@ -103,20 +103,31 @@ Model::Model(const char *filename) : normal_map_(), specular_()
             indexes_[(2 * 3 * n_faces_) + (i * 3 + j)] = faces_normals[i][j];
         }
     }
+
+    diffuse_ = new TGAImage();
+    normal_map_ = new TGAImage();
+    specular_ = new TGAImage();
 }
 
 Model::~Model()
 {
     delete[] indexes_;
     delete[] vectors_;
+
+    delete diffuse_;
+    delete normal_map_;
+    delete specular_;
 }
 
 Model *Model::cudaDeepCopyToDevice()
 {
-    // make device copies of the arrays in this
+    // make device copies of the data in this
     
     int *d_indexes;
     Vec3f *d_vectors;
+    TGAImage *d_diffuse;
+    TGAImage *d_specular;
+    TGAImage *d_normal_map;
 
     int size_indexes = (n_faces_ * 9) * sizeof(int);
     int size_vectors = (n_verts_ + n_uvs_ + n_normals_) * sizeof(Vec3f);
@@ -127,13 +138,28 @@ Model *Model::cudaDeepCopyToDevice()
     cudaMemcpy(d_indexes, indexes_, size_indexes, cudaMemcpyHostToDevice);
     cudaMemcpy(d_vectors, vectors_, size_vectors, cudaMemcpyHostToDevice);
 
-    // temporarily make this point to the device arrays s.t. device model points to them
+    // textures need deep copies
+    if (diffuse_) 
+        d_diffuse = diffuse_->cudaDeepCopyToDevice();
+    if (specular_) 
+        d_specular = specular_->cudaDeepCopyToDevice();
+    if (normal_map_) 
+        d_normal_map = normal_map_->cudaDeepCopyToDevice();
+    
+    // temporarily make this point to the device data s.t. device model points to them
 
     int *indexes = indexes_;
     Vec3f *vectors = vectors_;
+    TGAImage *diffuse = diffuse_;
+    TGAImage *specular = specular_;
+    TGAImage *normal_map = normal_map_;
 
     indexes_ = d_indexes;
     vectors_ = d_vectors;
+    diffuse_ = d_diffuse;
+    specular_ = d_specular;
+    normal_map_ = d_normal_map;
+
 
     // copy this to device
     
@@ -145,6 +171,9 @@ Model *Model::cudaDeepCopyToDevice()
     
     indexes_ = indexes;
     vectors_ = vectors;
+    diffuse_ = diffuse;
+    specular_ = specular;
+    normal_map_ = normal_map;
 
     // return pointer to device model 
     return d_model;
@@ -161,6 +190,14 @@ void Model::cudaDeepFree(Model *device_ptr)
     cudaFree(m->vectors_);
     free(m);
     cudaFree(device_ptr);
+    
+    if (m->diffuse_) 
+        TGAImage::cudaDeepFree(m->diffuse_);
+    if (m->normal_map_) 
+        TGAImage::cudaDeepFree(m->normal_map_);
+    if (m->specular_) 
+        TGAImage::cudaDeepFree(m->specular_);
+
 }
 
 __host__ __device__ TGAImage *Model::texture_of_type(TextureType type)
@@ -168,23 +205,18 @@ __host__ __device__ TGAImage *Model::texture_of_type(TextureType type)
     switch (type)
     {
     case TextureType::DIFFUSE:
-        return &diffuse_;
+        return diffuse_;
     case TextureType::NORMAL_MAP:
-        return &normal_map_;
+        return normal_map_;
     case TextureType::SPECULAR:
-        return &specular_;
+        return specular_;
     }
-    return nullptr;
+    return diffuse_;
 }
 
 void Model::load_texture(const char *filename, TextureType type)
 {
     TGAImage *texture = texture_of_type(type);
-    if (texture == nullptr)
-    {
-        std::cerr << "texture type doesn't exist" << std::endl;
-        return;
-    }
 
     texture->read_tga_file(filename);
     texture->flip_vertically(); // so the origin is left bottom corner
@@ -197,7 +229,7 @@ __host__ __device__ TGAColor Model::sample_texture(Vec2f uv, TextureType type)
     {
         return TGAColor(0, 0, 0, 0);
     }
-
+    
     return texture->get(
         std::round(uv.x * (float)texture->get_width()),
         std::round(uv.y * (float)texture->get_height()));

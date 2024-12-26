@@ -36,9 +36,9 @@ private:
 	// 6*n_faces to 9*n_faces-1 -> normal indexes
 	int *indexes_;
 
-	TGAImage diffuse_;
-	TGAImage normal_map_;
-	TGAImage specular_;
+	TGAImage *diffuse_;
+	TGAImage *normal_map_;
+	TGAImage *specular_;
 
 	__host__ __device__ TGAImage *texture_of_type(TextureType type);
 
