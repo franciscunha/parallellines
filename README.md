@@ -1,13 +1,14 @@
 # tinyrenderer
 
 ![](images/african_head.jpg)
+
 *Image rendered with this rasterizer.*
 
 Software rasterizer made while following the course https://github.com/ssloy/tinyrenderer.
 
 The intent behind this project was to brush up on my C++ skills and get a fuller understanding of how graphics programming works on a lower level -- and I'm pretty happy with the results!
 
-You should be able to write any shader you want by defining a class that inherits from `IStruct`, then render a model using the `renderer` API.
+You should be able to write any shader you want by defining a class that inherits from `IShader`, then render a model using the `renderer` API.
 
 Next steps: Porting to the GPU with CUDA.
 
