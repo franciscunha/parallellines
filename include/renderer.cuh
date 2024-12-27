@@ -6,23 +6,30 @@
 #include "model.cuh"
 #include "thread_count.cuh"
 
-struct IShader
+struct IShaderData
 {
-    IShader() {}
-    virtual ~IShader() {}
+	IShaderData() {}
+	virtual ~IShaderData() {}
 
-    Matrix4 transform;
+	Matrix4 transform;
 
-    Matrix4 m_projection;
-    Matrix4 m_view;
-    Matrix4 m_viewport;
-
-    Model *model;
-
-    __device__ Vec4f vertex(int face_index, int vert_index) { return Vec4f(0, 0, 0, 0); };
-    __device__ bool fragment(Vec3f bar, TGAColor &color) { return false; };
+	Matrix4 m_projection;
+	Matrix4 m_view;
+	Matrix4 m_viewport;
 };
 
+template <typename ShaderTypeData>
+struct IShader
+{
+	__device__ IShader() {}
+	__device__ virtual ~IShader() {}
+
+	Model *model;
+	ShaderTypeData *uniform;
+
+	__device__ Vec4f vertex(int face_index, int vert_index) { return Vec4f(0, 0, 0, 0); };
+	__device__ bool fragment(Vec3f bar, TGAColor &color) { return false; };
+};
 
 namespace renderer
 {
@@ -59,23 +66,27 @@ namespace renderer
 			return Vec3f(1.0f - (cross.x + cross.y) / w, u, v);
 		}
 
-		template <typename ShaderType>
+		template <typename ShaderType, typename ShaderTypeData>
 		__global__ void render_face(
-			int nfaces,
 			int width,
 			float *z_buffer,
-			ShaderType *shader,
+			Model *model,
+			ShaderTypeData *shader_data,
 			TGAImage *output)
 		{
 			int face_index = blockIdx.x * blockDim.x + threadIdx.x;
-			if (face_index >= nfaces)
+			if (face_index >= model->nfaces())
 				return;
-			
+
+			ShaderType shader = ShaderType();
+			shader.model = model;
+			shader.uniform = shader_data;
+
 			// vertex shader
 			Vec3f vertices[3];
 			for (int i = 0; i < 3; i++)
 			{
-				vertices[i] = shader->vertex(face_index, i).dehomogenize();
+				vertices[i] = shader.vertex(face_index, i).dehomogenize();
 			}
 
 			// backface culling
@@ -124,7 +135,7 @@ namespace renderer
 
 					// fragment shader
 					TGAColor color = TGAColor(0, 0, 0, 0);
-					if (!shader->fragment(barycentric_coords, color))
+					if (!shader.fragment(barycentric_coords, color))
 					{
 						continue;
 					}
@@ -137,7 +148,8 @@ namespace renderer
 		__global__ void initialize_z_buffer(float *z_buffer, size_t size, float initial_value)
 		{
 			int idx = blockIdx.x * blockDim.x + threadIdx.x;
-			if (idx >= size) return;
+			if (idx >= size)
+				return;
 			z_buffer[idx] = initial_value;
 		}
 
@@ -167,7 +179,7 @@ namespace renderer
 		return m;
 	}
 
-    Matrix4 loot_at(Vec3f eye, Vec3f target = Vec3f(0, 0, 0), Vec3f up = Vec3f(0, 1, 0))
+	Matrix4 loot_at(Vec3f eye, Vec3f target = Vec3f(0, 0, 0), Vec3f up = Vec3f(0, 1, 0))
 	{
 		Vec3f z = (eye - target).normalize();
 		Vec3f x = up.cross(z).normalize();
@@ -188,7 +200,7 @@ namespace renderer
 		return inv_basis * translation;
 	}
 
-	template <typename ShaderType>
+	template <typename ShaderType, typename ShaderTypeData>
 	void render(TGAImage &output, Model &model)
 	{
 		// initialize z-buffer
@@ -202,38 +214,42 @@ namespace renderer
 
 		// create device pointers for parameters
 		TGAImage *d_output_image = output.cudaDeepCopyToDevice();
-		Model *d_model = model.cudaDeepCopyToDevice();		
-		ShaderType *d_shader;
-		cudaMalloc(&d_shader, sizeof(ShaderType));
+		Model *d_model = model.cudaDeepCopyToDevice();
+		ShaderTypeData *d_shader_data;
+		cudaMalloc(&d_shader_data, sizeof(ShaderTypeData));
 
-		// initialize shader and compute its transformation matrices
-		ShaderType shader = ShaderType();
+		// initialize shader data and compute its transformation matrices
+		ShaderTypeData shader_data = ShaderTypeData();
 
-		shader.m_viewport = viewport(output.get_width(), output.get_height());
-		shader.transform = shader.m_viewport * shader.m_projection * shader.m_view;
-		shader.model = d_model;
+		shader_data.m_viewport = viewport(output.get_width(), output.get_height());
+		shader_data.transform = shader_data.m_viewport * shader_data.m_projection * shader_data.m_view;
 
 		// copy shader to device
-		cudaMemcpy(d_shader, &shader, sizeof(ShaderType), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_shader_data, &shader_data, sizeof(ShaderTypeData), cudaMemcpyHostToDevice);
 
 		// calculate kernel size for render
 		calculate_kernel_size(model.nfaces(), &num_blocks, &block_size);
 
 		// make sure z_buffer is initialized before starting render
-		cudaDeviceSynchronize(); 
+		cudaDeviceSynchronize();
 
 		// render each face!
-		render_face<ShaderType><<<num_blocks, block_size>>>(model.nfaces(), output.get_width(), d_z_buffer, d_shader, d_output_image);
+		render_face<ShaderType, ShaderTypeData><<<num_blocks, block_size>>>(
+			output.get_width(),
+			d_z_buffer,
+			d_model,
+			d_shader_data,
+			d_output_image);
 
 		// make sure faces are rendered
-		cudaDeviceSynchronize(); 
+		cudaDeviceSynchronize();
 
 		// copy result back to output image
 		output.cudaDeepCopyFromDevice(*d_output_image);
 
 		// free all the device memory
 		cudaFree(d_z_buffer);
-		cudaFree(d_shader);
+		cudaFree(d_shader_data);
 		TGAImage::cudaDeepFree(d_output_image);
 		Model::cudaDeepFree(d_model);
 	}
