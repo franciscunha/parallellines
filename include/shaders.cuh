@@ -35,7 +35,7 @@ struct PhongShader : IShader<PhongShaderData>
         int *face_uv_indexes = model->face_uvs(face_index);
 
         varying_uv[vert_index] = model->uv(face_uv_indexes[vert_index]);
-        
+
         return uniform->transform * model->vert(face_vert_indexes[vert_index]).homogenize();
     }
 

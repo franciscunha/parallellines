@@ -10,8 +10,7 @@
 #include "../include/renderer.cuh"
 #include "../include/shaders.cuh"
 
-
-void renderer_demo() 
+void renderer_demo()
 {
 	TGAImage output(512, 512, TGAImage::RGB);
 
@@ -19,7 +18,7 @@ void renderer_demo()
 	model.load_texture("models/african_head/african_head_diffuse.tga", TextureType::DIFFUSE);
 	model.load_texture("models/african_head/african_head_spec.tga", TextureType::SPECULAR);
 	model.load_texture("models/african_head/african_head_nm.tga", TextureType::NORMAL_MAP);
-	
+
 	renderer::render<PhongShader, PhongShaderData>(output, model);
 
 	output.flip_vertically(); // so the origin is left bottom corner
@@ -30,7 +29,7 @@ void lines_demo()
 {
 	TGAImage output(512, 512, TGAImage::RGB);
 	Model model("models/african_head/african_head.obj");
-	
+
 	line_renderer::wireframe(&model, &output, TGAColor(255, 255, 255, 255));
 
 	output.flip_vertically(); // so the origin is left bottom corner

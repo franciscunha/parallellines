@@ -46,7 +46,7 @@ TGAImage *TGAImage::cudaDeepCopyToDevice()
 	// temporarily make this point to the device data s.t. device image points to them
 	unsigned char *data_ptr_copy = data;
 	data = d_data;
-	
+
 	// copy this to device
 	TGAImage *d_img;
 	cudaMalloc(&d_img, sizeof(TGAImage));
@@ -59,7 +59,6 @@ TGAImage *TGAImage::cudaDeepCopyToDevice()
 	return d_img;
 }
 
-
 void TGAImage::cudaDeepCopyFromDevice(const TGAImage &device_img)
 {
 	// delete allocated memory, we'll overwrite the address here
@@ -68,25 +67,25 @@ void TGAImage::cudaDeepCopyFromDevice(const TGAImage &device_img)
 
 	// initial copy of device img
 	cudaMemcpy(this, &device_img, sizeof(TGAImage), cudaMemcpyDeviceToHost);
-	
+
 	// save address of device data array
 	unsigned char *device_data = data;
-	
+
 	// reinitialize host data array
 	unsigned long nbytes = width * height * bytespp;
 	data = new unsigned char[nbytes];
-	
+
 	// copy device data array to host data array
-	cudaMemcpy(data, device_data, nbytes, cudaMemcpyDeviceToHost);	
+	cudaMemcpy(data, device_data, nbytes, cudaMemcpyDeviceToHost);
 }
 
 void TGAImage::cudaDeepFree(TGAImage *device_ptr)
 {
-    // copy device data to host so we can access the inner address
-    TGAImage *img = (TGAImage*)malloc(sizeof(TGAImage));
-    cudaMemcpy(img, device_ptr, sizeof(TGAImage), cudaMemcpyDeviceToHost);
-    
-    // free everything
+	// copy device data to host so we can access the inner address
+	TGAImage *img = (TGAImage *)malloc(sizeof(TGAImage));
+	cudaMemcpy(img, device_ptr, sizeof(TGAImage), cudaMemcpyDeviceToHost);
+
+	// free everything
 	cudaFree(img->data);
 	free(img);
 	cudaFree(device_ptr);

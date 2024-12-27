@@ -69,7 +69,7 @@ struct Vec3
 	__host__ __device__ inline Vec3<t> cross(const Vec3<t> &v) const { return Vec3<t>(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x); }
 
 	__host__ __device__ inline float norm() const { return std::sqrt(x * x + y * y + z * z); }
-	__host__ __device__  Vec3<t> &normalize(t l = 1)
+	__host__ __device__ Vec3<t> &normalize(t l = 1)
 	{
 		*this = (*this) * (l / norm());
 		return *this;

@@ -11,4 +11,3 @@ inline void calculate_kernel_size(size_t target_num_threads, size_t *out_num_blo
     *out_num_threads_per_block = (*out_num_threads_per_block) + (remainder == 0 ? 0 : (32 - remainder));
     *out_num_blocks = std::ceil(target_num_threads / (float)(*out_num_threads_per_block));
 }
-

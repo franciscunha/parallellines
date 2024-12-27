@@ -6,8 +6,9 @@
 
 #include <fstream>
 
-#pragma pack(push,1)
-struct TGA_Header {
+#pragma pack(push, 1)
+struct TGA_Header
+{
 	char idlength;
 	char colormaptype;
 	char datatypecode;
@@ -18,16 +19,17 @@ struct TGA_Header {
 	short y_origin;
 	short width;
 	short height;
-	char  bitsperpixel;
-	char  imagedescriptor;
+	char bitsperpixel;
+	char imagedescriptor;
 };
 #pragma pack(pop)
 
-
-
-struct TGAColor {
-	union {
-		struct {
+struct TGAColor
+{
+	union
+	{
+		struct
+		{
 			unsigned char b, g, r, a;
 		};
 		unsigned char raw[4];
@@ -35,50 +37,63 @@ struct TGAColor {
 	};
 	int bytespp;
 
-	__host__ __device__ TGAColor() : val(0), bytespp(1) {
+	__host__ __device__ TGAColor() : val(0), bytespp(1)
+	{
 	}
 
-	__host__ __device__ TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A) : b(B), g(G), r(R), a(A), bytespp(4) {
+	__host__ __device__ TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A) : b(B), g(G), r(R), a(A), bytespp(4)
+	{
 	}
 
-	__host__ __device__ TGAColor(int v, int bpp) : val(v), bytespp(bpp) {
+	__host__ __device__ TGAColor(int v, int bpp) : val(v), bytespp(bpp)
+	{
 	}
 
-	__host__ __device__ TGAColor(const TGAColor &c) : val(c.val), bytespp(c.bytespp) {
+	__host__ __device__ TGAColor(const TGAColor &c) : val(c.val), bytespp(c.bytespp)
+	{
 	}
 
-	__host__ __device__ TGAColor(const unsigned char *p, int bpp) : val(0), bytespp(bpp) {
-		for (int i=0; i<bpp; i++) {
+	__host__ __device__ TGAColor(const unsigned char *p, int bpp) : val(0), bytespp(bpp)
+	{
+		for (int i = 0; i < bpp; i++)
+		{
 			raw[i] = p[i];
 		}
 	}
 
-	__host__ __device__ TGAColor & operator =(const TGAColor &c) {
-		if (this != &c) {
+	__host__ __device__ TGAColor &operator=(const TGAColor &c)
+	{
+		if (this != &c)
+		{
 			bytespp = c.bytespp;
 			val = c.val;
 		}
 		return *this;
 	}
 
-	__host__ __device__ TGAColor operator *(float x) const {
+	__host__ __device__ TGAColor operator*(float x) const
+	{
 		return TGAColor(this->r * x, this->g * x, this->b * x, this->a);
 	};
 };
 
-
-class TGAImage {
+class TGAImage
+{
 protected:
-	unsigned char* data;
+	unsigned char *data;
 	int width;
 	int height;
 	int bytespp;
 
-	bool   load_rle_data(std::ifstream &in);
+	bool load_rle_data(std::ifstream &in);
 	bool unload_rle_data(std::ofstream &out);
+
 public:
-	enum Format {
-		GRAYSCALE=1, RGB=3, RGBA=4
+	enum Format
+	{
+		GRAYSCALE = 1,
+		RGB = 3,
+		RGBA = 4
 	};
 
 	TGAImage();
@@ -88,15 +103,15 @@ public:
 	void cudaDeepCopyFromDevice(const TGAImage &device_img);
 	static void cudaDeepFree(TGAImage *device_ptr);
 	bool read_tga_file(const char *filename);
-	bool write_tga_file(const char *filename, bool rle=true);
-	bool write_tga_file(std::string filename, bool rle=true);
+	bool write_tga_file(const char *filename, bool rle = true);
+	bool write_tga_file(std::string filename, bool rle = true);
 	bool flip_horizontally();
 	bool flip_vertically();
 	bool scale(int w, int h);
 	__host__ __device__ TGAColor get(int x, int y);
 	__host__ __device__ bool set(int x, int y, TGAColor c);
 	~TGAImage();
-	TGAImage & operator =(const TGAImage &img);
+	TGAImage &operator=(const TGAImage &img);
 	__host__ __device__ int get_width();
 	__host__ __device__ int get_height();
 	int get_bytespp();

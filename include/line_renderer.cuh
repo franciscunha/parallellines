@@ -64,7 +64,7 @@ namespace line_renderer
 			if (idx >= nfaces)
 				return;
 
-			int *face_vertices = model->face(idx); 
+			int *face_vertices = model->face(idx);
 
 			for (int j = 0; j < 3; j++)
 			{
@@ -72,7 +72,6 @@ namespace line_renderer
 				Vec2i vertex1 = world_to_screen_coords(model->vert(face_vertices[(j + 1) % 3]), width, height);
 				d_draw(vertex0, vertex1, output, color);
 			}
-
 		}
 	}
 
@@ -113,14 +112,14 @@ namespace line_renderer
 	}
 
 	void wireframe(Model *model, TGAImage *output, TGAColor color)
-	{		
+	{
 		int w = output->get_width();
 		int h = output->get_height();
 
 		// create device pointers for parameters
 		TGAImage *d_output_image = output->cudaDeepCopyToDevice();
 		Model *d_model = model->cudaDeepCopyToDevice();
-		
+
 		// call kernel
 		size_t num_blocks, threads_per_block;
 		calculate_kernel_size(model->nfaces(), &num_blocks, &threads_per_block);
