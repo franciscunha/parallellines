@@ -59,7 +59,7 @@ See `main.cuh` for an example.
 All other files are written completely by me.
 
 ### Models
-- `african_head` and `diablo3_pose`: provided in ssloy's course at https://github.com/ssloy/tinyrenderer
+- `african_head`, `diablo3_pose` and `boggie`: provided in ssloy's course at https://github.com/ssloy/tinyrenderer
 - `debug_cube/cube.obj` and `debug_cube/texture.tga`: https://github.com/garykac/3d-cubes
 - `debug_cube/tex_DebugUVTiles.tga`: https://github.com/BlueG/DebugTextures  
 
