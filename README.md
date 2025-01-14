@@ -10,6 +10,17 @@ The intent behind this project was to brush up on my C++ skills and get a fuller
 
 ## Usage
 
+### Demo
+
+On Windows: if you have CUDA installed, compile with `make` (you might have to do this from the Visual Studio 2022 Developer Command Prompt) then run with `parallelllines.exe [render | wireframe] WIDTH HEIGHT DIR_PATH` where `WIDTH` and `HEIGHT` are the width and height of your output image, and `DIR_PATH` is the path to a directory that contains:
+- A wavefront model file named `model.obj`
+- A TGA diffuse texture file named `diffuse.tga`
+- A TGA specular texture file named `specular.tga`
+- A TGA normal map file named `normal_map.tga`
+*for the wireframe option, you only need the model.*
+
+Your model will be rendered using the provided implementation for a PhongShader, and the output saved to `images/out.tga`. I recommend the software JPEGView to view TGA images.
+
 ### Writing shaders
 
 See `shaders.cuh` for an example.
